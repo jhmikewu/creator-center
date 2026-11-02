@@ -185,7 +185,7 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 
 ## Verification performed
 
-- `npm test` — 38 tests, all passing.
+- `npm test` — 40 tests, all passing.
 - `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
 - `npm run build` — all four packages build; Vite production bundle produced.
 - API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.

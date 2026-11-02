@@ -288,6 +288,7 @@ export function saveHistoryPoint(db: DB, point: HistoryPoint): void {
 }
 
 export function listHistory(db: DB, accountIds?: readonly string[]): HistoryPoint[] {
+  if (accountIds !== undefined && accountIds.length === 0) return [];
   const rows = accountIds?.length
     ? (db
         .prepare(

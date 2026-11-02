@@ -10,6 +10,7 @@ import { createAccount, listAccounts } from '../src/repositories/accounts.js';
 import { upsertPost } from '../src/repositories/posts.js';
 import { SyncService } from '../src/services/sync.js';
 import { seedDemoWorkspace } from '../src/demo/seed.js';
+import { normalizeCommunityPayload } from '../src/services/community.js';
 
 const openWorkspaces: { close: () => void }[] = [];
 
@@ -232,6 +233,29 @@ describe('workspace API', () => {
     expect(scoped.body.accounts[0].id).toBe(douyin.id);
   });
 
+  it('does not leak other accounts into an unknown account scope', async () => {
+    const { app, db } = workspace();
+    const account = createAccount(db, { platform: 'douyin', displayName: 'Real account' });
+    upsertPost(db, {
+      accountId: account.id,
+      platform: 'douyin',
+      remoteId: 'dy-1',
+      title: 'Should not appear',
+      url: '',
+      format: 'video',
+      status: 'published',
+      publishedAt: '2026-11-01T02:00:00.000Z',
+      scheduledAt: null,
+      metrics: {},
+      collectedAt: '2026-11-03T00:00:00.000Z',
+    });
+    const scoped = await request(app).get('/api/dashboard?account=missing-account').expect(200);
+    expect(scoped.body.accounts).toEqual([]);
+    expect(scoped.body.posts).toEqual([]);
+    expect(scoped.body.plans).toEqual([]);
+    expect(scoped.body.history).toEqual([]);
+  });
+
   it('adds, completes and deletes to-dos', async () => {
     const { app } = workspace();
     const created = await request(app).post('/api/todos').send({ title: 'Check the schedule' }).expect(201);
@@ -264,6 +288,41 @@ describe('workspace API', () => {
     const { app, db } = workspace();
     createAccount(db, { platform: 'douyin', displayName: 'Real account' });
     await request(app).post('/api/demo/seed').expect(409);
+  });
+
+  it('normalises a known community status shape and rejects an unknown one', () => {
+    const oldShape = normalizeCommunityPayload(
+      {
+        remote: {
+          connectivity: { reachable: true, authenticated: true, latency_ms: 120 },
+          catalogue: {
+            status: 'ready',
+            complete: true,
+            stale: false,
+            last_success_at: '2026-11-03T01:00:00.000Z',
+            totals: { topics: 10, latex_formulas: 20, manim_animations: 3 },
+            last_24_hours: { topics: 1 },
+            last_7_days: { topics: 4 },
+          },
+        },
+        local: { workers: [] },
+      },
+      'https://forum.test/status',
+      '2026-11-03T02:00:00.000Z',
+    );
+    expect(oldShape.status).toBe('connected');
+    expect(oldShape.totals).toEqual(
+      expect.objectContaining({ topics: 10, formulas: 20, animations: 3 }),
+    );
+    expect(oldShape.catalogueComplete).toBe(true);
+
+    const unknown = normalizeCommunityPayload(
+      { hello: 'not a status payload' },
+      'https://forum.test/status',
+      '2026-11-03T02:00:00.000Z',
+    );
+    expect(unknown.status).toBe('error');
+    expect(unknown.error).toMatch(/does not understand/);
   });
 
   it('reopens a database with schema migrations applied once', () => {

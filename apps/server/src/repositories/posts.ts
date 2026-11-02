@@ -32,6 +32,7 @@ export interface PostInput {
 }
 
 export function listPosts(db: DB, accountIds?: readonly string[]): Post[] {
+  if (accountIds !== undefined && accountIds.length === 0) return [];
   const rows = accountIds?.length
     ? (db
         .prepare(

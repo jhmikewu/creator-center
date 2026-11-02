@@ -50,11 +50,23 @@ export function isMac(): boolean {
   return navigator.platform.toLowerCase().includes('mac');
 }
 
+export function safeHref(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function openExternal(url: string): void {
+  const href = safeHref(url);
+  if (!href) return;
   const desktop = (window as unknown as { creatorCenter?: { openExternal?: (value: string) => void } })
     .creatorCenter;
-  if (desktop?.openExternal) desktop.openExternal(url);
-  else window.open(url, '_blank', 'noopener,noreferrer');
+  if (desktop?.openExternal) desktop.openExternal(href);
+  else window.open(href, '_blank', 'noopener,noreferrer');
 }
 
 export function storageGet<T>(key: string, fallback: T): T {

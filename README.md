@@ -88,7 +88,7 @@ removes `ELECTRON_RUN_AS_NODE` when it is inherited from an automation environme
 ## Tests and checks
 
 ```sh
-npm test          # 38 domain/API/database tests
+npm test          # 40 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```

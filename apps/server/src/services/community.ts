@@ -86,6 +86,34 @@ export function normalizeCommunityPayload(
   capturedAt: string,
 ): CommunitySnapshot {
   const root = isRecord(payload) ? payload : {};
+  const recognized =
+    isRecord(root.remote) ||
+    isRecord(root.connectivity) ||
+    isRecord(root.catalogue) ||
+    isRecord(root.totals) ||
+    isRecord(root.local);
+  if (!recognized) {
+    return {
+      capturedAt,
+      sourceDate: todayShanghai(),
+      status: 'error',
+      reachable: false,
+      authenticated: false,
+      latencyMs: null,
+      endpoint,
+      error: 'The status endpoint returned a shape this monitor does not understand.',
+      catalogueStatus: 'unknown',
+      catalogueComplete: false,
+      catalogueStale: true,
+      totals: {},
+      last24Hours: {},
+      last7Days: {},
+      workers: [],
+      mentionJobs: { available: false, total: null, retryable: null, byStatus: {} },
+      drawings: { available: false, trackedPosts: null, publishedGraphs: null, publishedAnimations: null },
+      pdfs: { available: false, trackedTopics: null, published: null, pending: null },
+    };
+  }
   const remote = isRecord(root.remote) ? root.remote : {};
   const local = isRecord(root.local) ? root.local : {};
   const connectivity = isRecord(remote.connectivity)
@@ -123,7 +151,7 @@ export function normalizeCommunityPayload(
     endpoint,
     error: stringValue(connectivity.error, '') || null,
     catalogueStatus,
-    catalogueComplete: booleanValue(catalogue.complete, false),
+    catalogueComplete: booleanValue(catalogue.complete, isRecord(catalogue.totals)),
     catalogueStale: booleanValue(catalogue.stale, false),
     totals: normalizeCounts(catalogue.totals),
     last24Hours: normalizeCounts(catalogue.last_24_hours),

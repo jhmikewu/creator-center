@@ -40,7 +40,7 @@ import {
   type MetricKey,
 } from '@creator-center/shared';
 import { useWorkspace } from '../state';
-import { cn } from '../utils';
+import { cn, safeHref } from '../utils';
 import {
   Badge,
   Button,
@@ -593,8 +593,8 @@ function PostDetailModal({
               ? `Releases ${detail.post.scheduledAt ? formatDay(detail.post.scheduledAt.slice(0, 10), { month: 'short', day: 'numeric' }) : 'soon'} at ${formatTime(detail.post.scheduledAt)}`
               : `${detail.post.publishedAt ? formatDay(detail.post.publishedAt.slice(0, 10), { month: 'long', day: 'numeric', year: 'numeric' }) : 'Unknown date'} at ${formatTime(detail.post.publishedAt)}`}
           </span>
-          {detail.post.url && (
-            <a href={detail.post.url} target="_blank" rel="noreferrer">
+          {detail.post.url && safeHref(detail.post.url) && (
+            <a href={safeHref(detail.post.url)} target="_blank" rel="noreferrer">
               Open on platform
             </a>
           )}

@@ -30,7 +30,7 @@ import {
 } from '@creator-center/shared';
 import { useWorkspace } from '../state';
 import type { AccountDetail } from '../api';
-import { cn, openExternal, PLATFORM_CHART_COLORS } from '../utils';
+import { cn, openExternal, PLATFORM_CHART_COLORS, safeHref } from '../utils';
 import {
   AccountAvatar,
   Badge,
@@ -397,8 +397,8 @@ function ContentRow({ post, account, pending = false }: { post: Post; account: A
           <span className="muted">No metrics</span>
         )}
       </div>
-      {post.url && (
-        <a className="content-row-link" href={post.url} target="_blank" rel="noreferrer" aria-label={`Open ${post.title} on the platform`}>
+      {post.url && safeHref(post.url) && (
+        <a className="content-row-link" href={safeHref(post.url)} target="_blank" rel="noreferrer" aria-label={`Open ${post.title} on the platform`}>
           <ExternalLink size={14} />
         </a>
       )}

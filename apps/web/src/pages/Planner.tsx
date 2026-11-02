@@ -353,7 +353,7 @@ function PlanListRow({
   const status = planStatus(plan);
   const resolved = resolveTargetAccounts(plan.targets, accounts);
   const linked = plan.publications.length;
-  const date = plan.scheduledFor;
+  const date = plan.scheduledFor ?? plan.publications[0]?.publishedAt?.slice(0, 10) ?? null;
   const relative =
     date && date >= today && dayDistance(date, today) <= 14
       ? `in ${dayDistance(date, today)} day${dayDistance(date, today) === 1 ? '' : 's'}`
