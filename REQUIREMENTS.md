@@ -504,6 +504,7 @@ redesign requirement.
 | UX-08 | A first-run setup that explains platform sessions, YouTube OAuth and data location. | SHOULD |
 | UX-09 | Keep the density and information the owner needs; do not hide metrics behind extra clicks without reason. | SHOULD |
 | UX-10 | Do not lose data or drafts on navigation, refresh or update. | MUST |
+| UX-11 | If Q2 keeps it, show the About view with the personal to-do list (add/complete/delete) and changelog. | SHOULD (parity; Q2) |
 
 ### 6.11 Security and privacy (SEC)
 
@@ -577,7 +578,7 @@ redesign" means preserve the workflow but rebuild the UI; "ask" means Q2/Q3/Q4 d
 | Community monitor and history | COM-01..05 | Ask Q2 |
 | YouTube OAuth connection | ACC-04 | Keep, redesign |
 | Browser sessions | ACC-03, ACC-09 | Replace the remote desktop with an embedded browser |
-| About/todos/changelog | — | Ask Q2 |
+| About/todos/changelog | UX-11 | Ask Q2 |
 | Dashboard login | DES-12, SEC-05 | Ask Q16 (may be unnecessary in a local app) |
 | Old SQLite data and media folders | DAT-01..04 | Ask Q6; migrate if wanted |
 | Docker/NFS/watchdog/TLS deployment | DES-02 | Drop; the standalone app replaces it |
