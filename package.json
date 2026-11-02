@@ -12,7 +12,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w @creator-center/server\" \"npm run dev -w @creator-center/web\"",
+    "dev": "cross-env CREATOR_CENTER_DATA_DIR=.data/dev concurrently -n api,web -c blue,magenta \"tsx watch apps/server/src/index.ts\" \"npm run dev -w @creator-center/web\"",
     "dev:desktop": "npm run build && npm run start -w @creator-center/desktop",
     "build": "npm run build -w @creator-center/shared && npm run build -w @creator-center/server && npm run build -w @creator-center/web && npm run build -w @creator-center/desktop",
     "start": "npm run start -w @creator-center/server",
@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:demo": "tsx apps/server/src/demo/seed-cli.ts",
-    "dev:demo": "tsx apps/server/src/demo/dev-demo.ts"
+    "dev:demo": "cross-env CREATOR_CENTER_DATA_DIR=.data/demo concurrently -n api,web -c blue,magenta \"tsx watch apps/server/src/index.ts\" \"npm run dev -w @creator-center/web\"",
+    "start:desktop:demo": "cross-env CREATOR_CENTER_DATA_DIR=.data/demo npm run start -w @creator-center/desktop"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
@@ -34,6 +35,7 @@
     "tsx": "^4.19.2",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "cross-env": "^7.0.3"
   }
 }

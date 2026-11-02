@@ -65,19 +65,19 @@ npm install
 npm run seed:demo -- --data-dir .data/demo
 
 # API on 127.0.0.1:4317 + Vite on http://127.0.0.1:4318
-CREATOR_CENTER_DATA_DIR=.data/demo npm run dev
+npm run dev:demo
 ```
 
-Without `CREATOR_CENTER_DATA_DIR` the server uses `.data/dev` for `npm run dev` and
-`~/.creator-center` when started directly. The app opens empty until you add an account or load
-the demo from the empty-state screen. Each platform collector is a later increment, so a real
+`npm run dev` uses `.data/dev` and starts with an empty workspace; `npm run dev:demo` uses the
+seeded `.data/demo`. The app also opens empty until you add an account or choose **Explore the
+demo workspace** from the empty state. Each platform collector is a later increment, so a real
 account starts in `setup_required`; the demo workspace exercises every implemented workflow.
 
 ### Desktop shell
 
 ```sh
 npm run build
-CREATOR_CENTER_DATA_DIR=$PWD/.data/demo npm run start -w @creator-center/desktop
+npm run start:desktop:demo
 ```
 
 The Electron main process starts the local API as a **Node sidecar** on an ephemeral loopback
