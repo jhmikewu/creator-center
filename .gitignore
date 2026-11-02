@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+.data/
+*.log
+.DS_Store
+coverage/
+.vite/
+*.local
+docs/screenshots/*.tmp.png

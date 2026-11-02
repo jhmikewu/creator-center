@@ -1,0 +1,205 @@
+# Creator Center — implementation notes
+
+This document records what the first implementation increment actually delivers, how the
+workspace is put together, and what is deliberately left for the next increments. The source of
+truth for product behaviour remains [REQUIREMENTS.md](../REQUIREMENTS.md).
+
+## Architecture
+
+```
+Electron main (apps/desktop)
+  ├─ spawns Node sidecar on an ephemeral 127.0.0.1 port
+  ├─ waits for GET /api/health
+  ├─ loads the built React renderer from apps/web/dist
+  └─ window state + single-instance lock + native notification bridge
+
+Node sidecar (apps/server)
+  ├─ Express JSON API on loopback only
+  ├─ SQLite database in the configured data directory
+  ├─ repositories for accounts, metrics/history, posts, plans, merges,
+  │  tags, Community snapshots, to-dos, settings and sync runs
+  ├─ pure domain logic from packages/shared
+  ├─ sync coordinator with a platform-adapter contract
+  └─ serves the renderer build in production
+
+React renderer (apps/web)
+  ├─ workspace context: bootstrap, dashboard scope, plans, to-dos, settings
+  ├─ overview, account drawer, planner, timeline/merges, Community,
+  │  Media roadmap, About/to-dos, Settings
+  └─ shared domain logic imported from packages/shared
+```
+
+The sidecar is a separate Node process so `better-sqlite3`'s native binary uses the Node ABI,
+not Electron's. In a packaged build the same contract can bundle a Node runtime; packaging is
+not part of this increment.
+
+## Data model
+
+| Table | Purpose |
+| --- | --- |
+| `accounts` | One row per platform account, including two accounts on the same platform. |
+| `account_metrics` | One row per metric with scope, availability, value, period, source, reason and measured-at. |
+| `account_history` | Daily per-account follower/post/engagement history for the 90-day retention. |
+| `posts` | Published or platform-scheduled content, keyed by `(account_id, remote_id)`. |
+| `plans` | Local plans; plans never publish. |
+| `plan_targets` | Platform-level (`account_key = '*'`) or specific-account targets. |
+| `plan_tags`, `tags` | Normalised tag catalogue. |
+| `publications` | One existing published post per plan and account; a record, never an action. |
+| `merges`, `merge_members` | Local 2–5 post groups, at most one post per account. |
+| `community_snapshots` | Latest status/catalogue payload per source day. |
+| `todos` | Personal to-do list. |
+| `settings` | Key/value settings; `dataDir` is reported from the runtime. |
+| `sync_runs` | Start/finish, trigger, errors and per-account results. |
+| `demo_entities` | IDs created by the demo seed, so removal does not touch real data. |
+
+The important invariant is that **prices, metrics, posts and history are always joined through
+an account ID**, never a platform key. A plan target may be a platform (meaning every current
+and future account on it) or a specific account (Q25).
+
+## Requirement status
+
+Legend: **Done** = implemented and exercised in this increment; **Partial** = foundation or
+read-side present, live integration absent; **Next** = deliberately deferred.
+
+### Accounts and sessions (ACC)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| ACC-01, ACC-02 | Done | Add accounts on all five platforms; multiple accounts per platform; stable account IDs. |
+| ACC-03, ACC-04, ACC-09, ACC-10 | Next | Embedded isolated sessions and YouTube Desktop OAuth are the collector increment. |
+| ACC-05 | Done | Per-account status, analytics/content state, last attempt/success and re-auth action. |
+| ACC-06 | Partial | Six-hour/manual sync coordinator, overlap guard, progress and results; real adapters next. |
+| ACC-07 | Done | A failed refresh keeps the previous reading and marks it stale. |
+| ACC-08 | Done | Studio and public-profile links per account. |
+| ACC-11 | Done | Platform adapter contract + capability declarations in `packages/shared` and `apps/server/adapters`. |
+| ACC-12 | Done | Rename/remove, confirmation, local cascade; remove is tested at the API level. |
+
+### Overview and monitoring (MON)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| MON-01, MON-02, MON-09 | Done | Cards, detailed drawer, on-demand sync and automatic refresh. |
+| MON-03, MON-04 | Done | Metric scope/availability/period/source/reason; measured zero, pending and unsupported are distinct. |
+| MON-05 | Done | Follower dot pool, 7-day gain, per-account history; separate Community sparklines. |
+| MON-06 | Done | Latest measurement time and next-sync indicator. |
+| MON-07 | Partial | 90-day history retained/pruned; 30-day chart shown. Seeded demo has 30 days. |
+| MON-08 | Done | Per-post metrics in the 60-day window on the account view. |
+| MON-10, MON-12 | Done | Scope switcher (all/platform/account), explicit sums and labels. |
+| MON-11 | Done | Redesigned hierarchy: KPI band, account cards, growth, distribution, timeline. |
+
+### Content planner (PLN)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| PLN-01..07, PLN-09, PLN-11 | Done | Full CRUD, defaults, formats, tags/aliases, filters, privacy, dirty-guard, delete confirmation, undated plans, platform/all-account/specific targets. |
+| PLN-08 | Done | One published post per selected account; links survive collection-window changes. |
+| PLN-10 | Done | Drag/drop and Alt+Up/Down reschedule; pinned publication plans stay put. |
+
+### Timeline, publications and merges (TML)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| TML-01..05, TML-08, TML-10 | Done | 15-day Asia/Shanghai calendar, lanes, distinct markers, account labels, metrics, links, 2–5 post merges (one per account), edit/unmerge, ideas and plan list. |
+| TML-06 | Done in model/UI | Scheduled posts show pending; a published post keeps its ID so a merge survives. |
+| TML-07 | Done | Merges and links are resolved from collected posts with graceful fallback when a member leaves the window. |
+| TML-09 | Done | Responsive layout, full-height rows, scrollable lanes, no clipped slivers. |
+| TML-11 | Next | The 公众号 adapter will add scheduled-post collection; capability is declared, data not live. |
+
+### Analytics (ANL)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| ANL-01..04, ANL-07 | Partial | Normalised metric set, scopes, availability, per-account daily history and per-post breakdown are in place; live platform semantics await collectors. |
+| ANL-05, ANL-06 | Done | Audience sum with "not unique people" caveat; Community kept separate. |
+| ANL-08..10 | Next/Partial | CSV export and period comparison deliberately deferred; account/platform scope selection exists. |
+
+### Media and covers (MED/COV)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| MED-01..12, COV-01..07 | Next | Media paths/worker endpoint/theme are stored, and the Media page describes the pipeline. No FFmpeg job runs yet. |
+
+### Community (COM)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| COM-01..04 | Done | Configurable endpoint, connectivity/auth/latency, 24h/7d/all-time counts, worker/timer health, management cards, 30-day history and last-good snapshot. |
+| COM-05 | Done | Optional endpoint; missing/unavailable endpoint degrades without affecting the rest. |
+
+### Desktop and operations (DES)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| DES-01, DES-02 | Partial | Electron shell starts a local Node sidecar with no Docker, TLS or external server; installers/packaging next. |
+| DES-03 | Done | Database/settings in a documented app-data directory; media paths configurable. |
+| DES-04 | Done | Background sync coordinator, progress, manual sync, non-blocking UI. |
+| DES-05, DES-09, DES-10 | Next/Partial | Notification bridge exists; tray/auto-update/signing next. |
+| DES-06 | Done | Window state restore and single-instance lock. |
+| DES-07 | Partial | Cached data remains usable offline; real platform actions are blocked by unavailable adapters. |
+| DES-08 | Partial | Data directory documented and visible; backup/restore next. |
+| DES-13 | Partial | External worker URL is stored; validation/health next. |
+| DES-11 | Done | English UI, platform names preserved. |
+| DES-12 | Next | Optional app lock deferred (Q16 working assumption: OS account is enough). |
+
+### UX, security and data (UX/SEC/DAT)
+
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| UX-01..05, UX-08..10, UX-12..14 | Done | Coherent design system, account identity everywhere, detailed view, visible focus, empty/loading/error states, first-run/empty-state onboarding, dirty guard, cleaner dashboard, account switcher. |
+| UX-06, UX-07, UX-11 | Done | Responsive down to laptop widths, light/dark/system, About/to-dos/changelog. |
+| SEC-01, SEC-02 | Next | No secrets are stored in this increment; when sessions land they will use OS keychain/encrypted storage and log redaction. |
+| SEC-03, SEC-04 | Done | Local-only API bind, no telemetry, no inbound listener by default. |
+| SEC-05, SEC-06 | Partial | OS account model; least-privilege file mode work next. |
+| DAT-01, DAT-07 | Done | Versioned SQLite migrations; reopening and demo seeding are tested. |
+| DAT-02..05 | Next | Old workspace/media/OAuth import and backup/restore are the migration increment. |
+| DAT-06, DAT-08 | Partial | 90-day history pruning and cascade removal exist; retention UI and full old-model migration next. |
+
+## Sync and adapter contract
+
+`apps/server/src/adapters/types.ts` defines the seam:
+
+- `AdapterContext` gives the account, its current posts/history and the collection time.
+- A successful result supplies account state, metric metadata, an optional history point and the
+  full published/scheduled post set. The coordinator writes it atomically.
+- A failed result supplies a status/detail and `keepPrevious`; the coordinator only updates the
+  attempt state and stale marker.
+- The demo adapter (`SimulatorAdapter`) refreshes seeded demo accounts and promotes a scheduled
+  post to published with the same ID at its release time.
+- The real adapters are `UnavailableAdapter` stubs today: they explicitly report setup required
+  or stale, never invent a metric. Replacing one with a live collector does not change the
+  overview, planner or timeline.
+
+## Visual evidence
+
+- `before-old-overview.png` — real `creator-center-old` frontend, 1440×940, light, fixture API.
+- `after-overview.png` — new overview, 1440×940, light, demo SQLite workspace.
+- `after-timeline.png` — the same overview scrolled to the 15-day calendar.
+- `after-account-detail.png` — per-account drawer with metric metadata and history.
+- `after-planner.png`, `after-plan-dialog.png` — planner list and editor.
+- `after-merge-dialog.png` — account-keyed cross-post merge editor.
+- `after-community.png`, `after-settings.png`, `after-about.png`, `after-overview-dark.png`.
+- `after-overview-full.png` — full-height overview for layout review.
+
+The captures were produced with a browser at a 1440×940 CSS viewport. The fixture API for the old
+capture transformed the demo data into the old app's shape; no old-app code was changed.
+
+## Verification performed
+
+- `npm test` — 38 tests, all passing.
+- `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
+- `npm run build` — all four packages build; Vite production bundle produced.
+- API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.
+- Desktop shell: Electron launched the sidecar on an ephemeral port, `/api/health` returned
+  `desktop: true`, and the renderer loaded from the built assets.
+- Visual smoke: overview, account drawer, planner, plan dialog, timeline, merge dialog,
+  Community, Settings, About, dark theme at 1440×940.
+
+## Open limitations
+
+- No live platform session, collector or OAuth flow exists yet; real accounts show a truthful
+  setup state.
+- No media job, cover render or installer is produced yet.
+- Community parsing understands the old app's status shape and a tolerant simple shape; a real
+  endpoint should be verified against the owner's service.
+- The demo workspace is opt-in and clearly marked; it is not auto-seeded.
+- The old app's data has not been imported; this is a separate migration ticket.
