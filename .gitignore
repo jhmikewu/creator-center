@@ -9,3 +9,5 @@ coverage/
 .vite/
 *.local
 docs/screenshots/*.tmp.png
+
+*.tsbuildinfo
