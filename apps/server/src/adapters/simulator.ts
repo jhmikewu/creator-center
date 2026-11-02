@@ -1,4 +1,4 @@
-import type { MetricKey, Platform } from '@creator-center/shared';
+import { shanghaiDay, type MetricKey, type Platform } from '@creator-center/shared';
 import type { AdapterContext, AdapterResult, PlatformAdapter } from './types.js';
 import type { MetricInput } from '../repositories/accounts.js';
 import type { PostInput } from '../repositories/posts.js';
@@ -33,7 +33,7 @@ export class SimulatorAdapter implements PlatformAdapter {
       ? null
       : {
           accountId: context.account.id,
-          day: shanghaiDayOf(now),
+          day: shanghaiDay(now) as string,
           followers,
           posts,
           views: metricValue(metrics, 'views'),
@@ -105,13 +105,4 @@ function fallbackMetrics(platform: Platform, now: string): MetricInput[] {
       measuredAt: now,
     },
   ];
-}
-
-function shanghaiDayOf(iso: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Shanghai',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(iso));
 }

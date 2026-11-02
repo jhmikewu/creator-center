@@ -10,6 +10,7 @@ import type {
 } from '@creator-center/shared';
 import {
   PLATFORM_ORDER,
+  addDays,
   aggregateMetric,
   followerGain,
   latestMeasurement,
@@ -67,12 +68,11 @@ export function dashboardFor(
   const gains = accounts
     .map((account) => followerGain(history, account.id, today).gain)
     .filter((gain): gain is number => gain !== null);
+  const contentWindowStart = addDays(today, -60);
   const published = posts.filter((post) => {
     if (post.status !== 'published' || !post.publishedAt) return false;
     const day = shanghaiDay(post.publishedAt) ?? '';
-    const start = new Date(`${today}T00:00:00.000Z`);
-    start.setUTCDate(start.getUTCDate() - 60);
-    return day >= start.toISOString().slice(0, 10);
+    return day >= contentWindowStart;
   });
   const upcoming = posts.filter(
     (post) => post.status === 'scheduled' && post.scheduledAt && (shanghaiDay(post.scheduledAt) ?? '') >= today,
