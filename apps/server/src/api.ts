@@ -105,6 +105,7 @@ export function createApp(options: AppOptions): Express {
   app.post('/api/accounts', (request, response) => {
     const body = request.body as Record<string, unknown>;
     if (!isPlatform(body.platform)) throw new HttpError(400, 'Choose a supported platform.');
+    if (body.platform === 'youtube') throw new HttpError(400, 'YouTube collection is disabled in this build.');
     const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : '';
     if (!displayName) throw new HttpError(400, 'Give the account a display name.');
     if (displayName.length > 120) throw new HttpError(400, 'Keep the display name under 120 characters.');

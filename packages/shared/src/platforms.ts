@@ -87,6 +87,11 @@ export const PLATFORM_ORDER: readonly Platform[] = [
 ];
 
 export const PLATFORM_KEYS = PLATFORM_ORDER;
+
+/** Platforms the app offers while a collector is disabled. */
+export const ENABLED_PLATFORMS: readonly Platform[] = PLATFORM_ORDER.filter(
+  (platform) => platform !== 'youtube',
+);
 export const PLATFORM_LABELS: Record<Platform, string> = Object.fromEntries(
   PLATFORM_ORDER.map((key) => [key, PLATFORMS[key].label]),
 ) as Record<Platform, string>;

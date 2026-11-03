@@ -12,7 +12,7 @@ import {
   CONTENT_TYPES,
   CONTENT_TYPE_MAP,
   EXAM_TAG_CHOICES,
-  PLATFORM_ORDER,
+  ENABLED_PLATFORMS,
   PLATFORMS,
   TagError,
   applyContentDefaults,
@@ -218,7 +218,7 @@ export function PlanDialog({
     }
   }
 
-  const missingPlatforms = PLATFORM_ORDER.filter(
+  const missingPlatforms = ENABLED_PLATFORMS.filter(
     (platform) =>
       accountsOnPlatform(platform).length > 0 &&
       !draft.targets.some((target) => target.platform === platform),
@@ -304,7 +304,7 @@ export function PlanDialog({
               </div>
               {draft.targets.length === 0 && <p className="form-error">{fieldErrors.targets ?? 'Choose at least one channel.'}</p>}
               <div className="platform-targets">
-                {PLATFORM_ORDER.filter(
+                {ENABLED_PLATFORMS.filter(
                   (platform) =>
                     accountsOnPlatform(platform).length > 0 &&
                     draft.targets.some((target) => target.platform === platform),
