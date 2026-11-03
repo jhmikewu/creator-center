@@ -60,7 +60,7 @@ interface WorkspaceContextValue {
   updateAccount: (id: string, input: Record<string, unknown>) => Promise<Account>;
   removeAccount: (id: string) => Promise<void>;
   saveSettings: (patch: Partial<AppSettings>) => Promise<void>;
-  syncNow: () => Promise<void>;
+  syncNow: () => Promise<SyncState | null>;
   loadDemo: () => Promise<void>;
   removeDemo: () => Promise<void>;
   loadAccountDetail: (id: string) => Promise<AccountDetail>;
@@ -303,13 +303,35 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     [notify, refreshDashboard],
   );
 
-  const syncNow = useCallback(async () => {
+  const syncNow = useCallback(async (): Promise<SyncState | null> => {
     try {
       const result = await api.sync();
-      notify(result.started ? 'Sync started. This view refreshes as results arrive.' : 'A sync is already running.', 'info');
+      if (!result.started) notify('A sync is already running.', 'info');
       await refreshDashboard();
+      let state = result.state;
+      const deadline = Date.now() + 90_000;
+      while (state.running && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        state = await api.syncState();
+      }
+      await refreshDashboard();
+      if (state.running) {
+        notify('The sync is taking longer than expected. Open the account to see its current state.', 'info');
+      } else {
+        const unexpected = state.lastResults.filter(
+          (result) => result.status === 'error' && !result.detail.includes('no live collector'),
+        );
+        const first = unexpected[0];
+        if (first) {
+          notify(`${first.displayName}: ${first.detail}`, 'error');
+        } else {
+          notify('Sync finished.', 'success');
+        }
+      }
+      return state;
     } catch (caught) {
       notify(caught instanceof Error ? caught.message : 'Could not start a sync.', 'error');
+      return null;
     }
   }, [notify, refreshDashboard]);
 

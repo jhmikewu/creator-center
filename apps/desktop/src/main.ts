@@ -1,8 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain, Notification, nativeTheme, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Notification, nativeTheme, session, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import net from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
+import { startCollectorBridge, type CollectorBridge } from './collector/bridge.js';
+import { accountPartition } from './collector/page.js';
 
 const here = __dirname;
 const APP_NAME = 'Creator Center';
@@ -17,6 +19,7 @@ interface WindowState {
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ChildProcess | null = null;
+let collectorBridge: CollectorBridge | null = null;
 let windowState: WindowState = { width: 1440, height: 940 };
 
 function stateFile(): string {
@@ -119,6 +122,7 @@ async function startBackend(): Promise<string> {
       CREATOR_CENTER_PORT: String(port),
       CREATOR_CENTER_WEB_DIST: webDist(),
       CREATOR_CENTER_DESKTOP: '1',
+      ...(collectorBridge ? { CREATOR_CENTER_COLLECTOR_URL: collectorBridge.url } : {}),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -191,6 +195,51 @@ function stopBackend(): void {
   }
 }
 
+ipcMain.handle('creator-center:connect-session', async (_event, payload: {
+  accountId?: unknown;
+  studioUrl?: unknown;
+}) => {
+  const accountId = typeof payload?.accountId === 'string' ? payload.accountId : '';
+  const studioUrl = typeof payload?.studioUrl === 'string' ? payload.studioUrl : '';
+  if (!accountId) return { ok: false, detail: 'No account selected.' };
+  const partition = accountPartition(accountId);
+  const loginWindow = new BrowserWindow({
+    width: 1180,
+    height: 860,
+    show: true,
+    title: 'Sign in',
+    autoHideMenuBar: true,
+    webPreferences: {
+      partition,
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      spellcheck: false,
+    },
+  });
+  try {
+    await loginWindow.loadURL(studioUrl || 'https://creator.douyin.com/creator-micro/home');
+  } catch {
+    // Keep the window open; the user can navigate or close it.
+  }
+  return await new Promise<{ ok: boolean; detail?: string }>((resolve) => {
+    loginWindow.on('closed', () => {
+      void Promise.race([
+        session.fromPartition(partition).cookies.get({}),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('The saved session could not be checked.')), 5000)),
+      ]).then((cookies) => {
+        const saved = cookies.some(
+          (cookie) => cookie.expirationDate === undefined || cookie.expirationDate * 1000 > Date.now(),
+        );
+        resolve(saved ? { ok: true } : { ok: false, detail: 'The sign-in window closed without a saved session.' });
+      }).catch((error) => resolve({
+        ok: false,
+        detail: error instanceof Error ? error.message : 'The saved session could not be checked.',
+      }));
+    });
+  });
+});
+
 ipcMain.handle('creator-center:choose-file', async () => {
   if (!mainWindow) return null;
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -237,6 +286,11 @@ if (!gotLock) {
   app.whenReady().then(async () => {
     app.setName(APP_NAME);
     try {
+      collectorBridge = await startCollectorBridge();
+    } catch (error) {
+      console.warn('Live collector bridge unavailable', error);
+    }
+    try {
       await createWindow();
     } catch (error) {
       dialog.showErrorBox(
@@ -258,5 +312,7 @@ if (!gotLock) {
   app.on('before-quit', () => {
     saveWindowState();
     stopBackend();
+    collectorBridge?.close();
+    collectorBridge = null;
   });
 }

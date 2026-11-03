@@ -380,3 +380,33 @@ export interface MigrationResult extends MigrationPreview {
   };
   backupPath: string;
 }
+
+/** Raw capture returned by the desktop browser collector for 抖音. */
+export interface DouyinCapture {
+  capturedAt: string;
+  profile: unknown;
+  postsPages: unknown[];
+  schedulePages: unknown[];
+  overview: unknown;
+  homeText: string;
+  analyticsText: string;
+  contentText: string;
+  scheduleRead: boolean;
+  loginRequired?: boolean;
+}
+
+/** Request from the local sidecar to the desktop collector bridge. */
+export interface CollectorRequest {
+  accountId: string;
+  platform: Platform;
+  studioUrl: string | null;
+  displayName: string;
+}
+
+/** Response from the desktop collector bridge. */
+export interface CollectorResponse {
+  ok: boolean;
+  loginRequired?: boolean;
+  detail?: string;
+  payload?: DouyinCapture;
+}

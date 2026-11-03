@@ -87,6 +87,16 @@ Before = main at `663e2a6`; after = this PR. Both use the 1440 × 940 viewport, 
 
 The pass removes page taglines and subtitles, section descriptions, footnotes, KPI hints, field hints and the long media/community roadmap prose, while keeping labels, statuses, warnings, confirmations, empty states and metric provenance.
 
+## Live 抖音 collection (v0.1.3)
+
+| Before — account drawer (existing capture) | After — Sign in action |
+| --- | --- |
+| ![Before live account](before-live-account.png) | ![After live account](after-live-account.png) |
+
+The account view now offers **Sign in**, which opens the account's persistent isolated session.
+The live creator-console capture itself needs the owner's signed-in session, so only the entry
+point is shown; the bridge and the signed-out path were smoke-tested end to end.
+
 ## Original first increment
 
 | File | What it shows |
