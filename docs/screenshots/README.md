@@ -44,20 +44,25 @@ opens collapsed to followers, posts, likes, comments and shares, and expands to 
 The source path shown in the captures is the scrubbed database supplied for validation; the
 importer opens it read-only and never writes to it.
 
-## UI follow-up: metric card name and import actions (v0.1.2)
+## UI follow-up: metric card name, row alignment and import actions (v0.1.2)
 
-Both pairs use the 1440 × 940 viewport and the light theme. The account-metric pair uses the same
-imported 抖音 account; the import-action pair uses the same non-empty workspace. Before is the
-v0.1.2 head at `9aeb7bb`; after is the follow-up commit.
+All pairs use the 1440 × 940 viewport and the light theme. The account-metric and alignment pairs
+use the same imported 抖音 account; the import-action pair uses the same non-empty workspace. The
+naming and import-action pairs start from the v0.1.2 head at `9aeb7bb`; the alignment pair starts
+from the follow-up head at `c2a7bb7`. After is the follow-up commit.
 
 | Before — "Metric detail" | After — "Account metrics" |
 | --- | --- |
 | ![Before metric card](before-followup-account-metrics.png) | ![After account metrics](after-followup-account-metrics.png) |
 | ![Before import actions](before-followup-import-actions.png) | ![After import actions](after-followup-import-actions.png) |
+| ![Before metric alignment](before-followup-metric-alignment.png) | ![After metric alignment](after-followup-account-metrics.png) |
 
 The table is now labelled `Account metrics`, making it clear that the card belongs to the
 per-account drawer. `Choose file` and `Preview` now sit on the same row as the database field
-instead of aligning to the bottom of its hint.
+instead of aligning to the bottom of its hint. Metric rows now share a first-line baseline, so
+a wrapped Period or Source no longer leaves the name, value and scope floating between its two
+lines. [after-followup-metric-alignment-expanded.png](after-followup-metric-alignment-expanded.png)
+shows the expanded 11-metric state, including availability badges.
 
 ## Original first increment
 
