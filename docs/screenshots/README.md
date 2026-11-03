@@ -15,7 +15,7 @@ workspace, so no private Feishu or platform account material is exposed.
   preview at the selected scale.
 - [after-overview-large.png](after-overview-large.png) — the same overview at the Large (130%) text
   setting; the 1200 px layout has no horizontal overflow.
-- [after-settings-large.png](after-settings-large.png) — the settings preview at 130%.
+- [after-settings-large.png](after-settings-large.png) — the settings preview at 130% (1200 px viewport).
 - [after-account-metrics-expanded.png](after-account-metrics-expanded.png) — the `Show all metrics`
   state with all 11 metrics.
 - [after-macos-desktop.png](after-macos-desktop.png) — actual Electron renderer on macOS. The native
