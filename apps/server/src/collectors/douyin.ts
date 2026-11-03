@@ -85,12 +85,14 @@ export function parseDouyinCapture(capture: DouyinCapture, account: Account): Ad
   );
   const firstPage = pages[0] ?? null;
   const total = firstPage?.total ?? null;
-  if (total !== null) {
-    set('posts', total, 'current', 'Current creator content count', POSTS_SOURCE,
-      'All content returned by the creator manager, including any review states.');
-  }
 
   const allPosts = [...new Map(pages.flatMap((page) => page.posts).map((post) => [post.remoteId, post])).values()];
+  const profilePosts = numberValue(profile.aweme_count);
+  const postCount = profilePosts ?? total ?? (pages.length > 0 && pages.every((page) => page.terminal) ? allPosts.length : null);
+  if (postCount !== null) {
+    set('posts', postCount, 'current', 'Current creator content count', POSTS_SOURCE,
+      'All content returned by the creator manager, including any review states.');
+  }
   const uncertain = pages.some((page) => page.uncertain);
   const complete = pages.length > 0 && pages.every((page) => page.terminal);
   const published = contentWindow(allPosts, capturedAt);
@@ -327,7 +329,6 @@ function readAnalytics(value: unknown, text: string): {
 } {
   const record = isRecord(value) ? value : {};
   const metrics = Array.isArray(record.metrics) ? record.metrics : [];
-  const populated = record.status_code === 0 && metrics.some((entry) => isRecord(entry) && Object.keys(entry).length > 0);
   const periodMatch = /统计周期[：:]\s*(\d{4}-\d{2}-\d{2})\s*至\s*(\d{4}-\d{2}-\d{2})/.exec(text);
   const period = periodMatch
     ? `${periodMatch[1] ?? ''} to ${periodMatch[2] ?? ''}`
@@ -337,6 +338,12 @@ function readAnalytics(value: unknown, text: string): {
   const views = labelNumber(top, '播放量');
   const rateMatch = /(?:^|\n)完播率\s+(\d+(?:\.\d+)?)%/.exec(top);
   const completionRate = rateMatch ? numberValue(rateMatch[1]) : null;
+  // The current console no longer requests the old overview JSON; its displayed
+  // overview carries the same labelled values. Only trust it when a value parsed.
+  const textOverview = /数据总览/.test(text) && /(播放量|完播率|统计周期)/.test(text);
+  const jsonPopulated = record.status_code === 0 &&
+    metrics.some((entry) => isRecord(entry) && Object.keys(entry).length > 0);
+  const populated = jsonPopulated || (textOverview && (views !== null || completionRate !== null));
   if (populated) {
     return {
       populated: true,

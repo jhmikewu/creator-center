@@ -64,6 +64,20 @@ export class CollectorPage {
     }
   }
 
+  /** Run a JSON fetch in the page's signed-in origin. Used when the current console no longer requests an old endpoint itself. */
+  async fetchJson(url: string): Promise<unknown | null> {
+    const script = `fetch(${JSON.stringify(url)}, { credentials: 'include' }).then((response) => response.ok ? response.json() : null).catch(() => null)`;
+    try {
+      return await withTimeout(
+        this.win.webContents.executeJavaScript(script, true),
+        8_000,
+        'The creator console did not answer.',
+      );
+    } catch {
+      return null;
+    }
+  }
+
   async clickText(...labels: string[]): Promise<string | null> {
     const script = `(() => {
       const labels = ${JSON.stringify(labels)};

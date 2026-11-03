@@ -1,11 +1,11 @@
 import type { CollectorResponse, DouyinCapture } from '@creator-center/shared';
-import { CollectorPage, accountPartition, hasSessionCookies, wait, withTimeout } from './page.js';
+import { CollectorPage, accountPartition, hasSessionCookies, withTimeout } from './page.js';
 
 const HOME = 'https://creator.douyin.com/creator-micro/home';
 const MANAGE = 'https://creator.douyin.com/creator-micro/content/manage';
 const DATA_CENTER = 'https://creator.douyin.com/creator-micro/data-center/operation';
 const USER = /\/aweme\/v1\/creator\/user\/info\//;
-const WORK = /\/janus\/douyin\/creator\/pc\/work_list/;
+const USER_URL = 'https://creator.douyin.com/aweme/v1/creator/user/info/';
 const OVERVIEW = /\/janus\/douyin\/creator\/data\/overview\/dashboard/;
 
 /**
@@ -40,41 +40,39 @@ export async function captureDouyin(
     if (!(await hasSessionCookies(partition))) {
       return { ok: false, loginRequired: true, detail: 'Sign in to the 抖音 creator console, then sync again.' };
     }
-    await page.open(studioUrl || HOME, 2500);
-    await page.waitForJson(USER, 10_000);
+    await page.open(studioUrl || HOME, 2000);
     const homeText = await page.text();
-    if (looksSignedOut(homeText, page.currentUrl())) {
-      return { ok: false, loginRequired: true, detail: 'Sign in to the 抖音 creator console, then sync again.' };
-    }
-    const profile = page.lastJson(USER);
+    let profile = page.lastJson(USER);
     if (!isRecord(profile)) {
+      // The current console no longer requests the profile endpoint on load;
+      // call it in the page's own signed-in origin instead.
+      profile = await page.fetchJson(USER_URL);
+    }
+    if (!isRecord(profile) || profile.status_code !== 0 || !isRecord(profile.user_profile)) {
       return {
         ok: false,
         loginRequired: true,
-        detail: 'The 抖音 creator console did not finish loading. Sign in and try again.',
+        detail: looksSignedOut(homeText, page.currentUrl())
+          ? 'Sign in to the 抖音 creator console, then sync again.'
+          : 'The 抖音 creator console did not return account data. Sign in and try again.',
       };
     }
 
     await page.open(MANAGE, 2500);
-    await page.waitForJson(WORK, 8_000);
-    await page.clickText('审核状态');
-    await wait(300);
-    await page.clickText('已发布');
-    await page.waitForJson(WORK, 5_000);
-    for (let index = 0; index < 3; index += 1) {
-      await page.scrollAll();
-      await wait(1200);
-    }
     const contentText = await page.text();
-    const work = page.json(WORK);
-    const postsPages = work.filter((entry) => statusOf(entry.url) !== '0').map((entry) => entry.body);
-    const schedulePages = work.filter((entry) => statusOf(entry.url) === '0').map((entry) => entry.body);
+    // The manager UI is filter/scroll driven and does not always request its
+    // list. The same signed-in endpoint is fetchable directly and pages with
+    // max_cursor, so use it instead of depending on UI clicks.
+    const published = await fetchWorkList(page, '1');
+    const scheduled = await fetchWorkList(page, '0');
+    const postsPages = published.pages;
+    const schedulePages = scheduled.pages;
 
     let analyticsText = '';
     let overview: unknown = null;
     if (isRecord(profile) && profile.has_data_mgmt_perm === true) {
-      await page.open(DATA_CENTER, 3000);
-      await page.waitForJson(OVERVIEW, 10_000);
+      await page.open(DATA_CENTER, 3500);
+      await page.waitForJson(OVERVIEW, 2_000);
       analyticsText = await page.text();
       overview = page.lastJson(OVERVIEW);
     }
@@ -88,18 +86,31 @@ export async function captureDouyin(
       homeText,
       analyticsText,
       contentText,
-      scheduleRead: schedulePages.length > 0,
+      scheduleRead: scheduled.read,
     };
     return { ok: true, payload };
   }
 }
 
-function statusOf(url: string): string | null {
-  try {
-    return new URL(url).searchParams.get('status');
-  } catch {
-    return null;
+async function fetchWorkList(
+  page: CollectorPage,
+  status: '0' | '1',
+): Promise<{ pages: unknown[]; read: boolean }> {
+  const pages: unknown[] = [];
+  let cursor = 0;
+  let read = false;
+  for (let index = 0; index < 10; index += 1) {
+    const url = `https://creator.douyin.com/janus/douyin/creator/pc/work_list?status=${status}&count=12&max_cursor=${cursor}`;
+    const body = await page.fetchJson(url);
+    if (!isRecord(body) || body.status_code !== 0 || !Array.isArray(body.aweme_list)) break;
+    read = true;
+    pages.push(body);
+    if (body.has_more !== true) break;
+    const next = typeof body.max_cursor === 'number' ? body.max_cursor : Number(body.max_cursor);
+    if (!Number.isFinite(next) || next === cursor) break;
+    cursor = next;
   }
+  return { pages, read };
 }
 
 function looksSignedOut(text: string, url: string): boolean {

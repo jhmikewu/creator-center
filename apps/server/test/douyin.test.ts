@@ -159,6 +159,18 @@ describe('douyin capture parser', () => {
     expect(metric('likes')).toMatchObject({ value: 50, scope: 'lifetime' });
   });
 
+  it('reads the displayed analytics when the old overview JSON is absent', () => {
+    const snapshot = parseDouyinCapture(capture({
+      postsPages: [],
+      schedulePages: [],
+      overview: null,
+      analyticsText: '数据总览\n播放量 1,799\n完播率 1.5%\n统计周期：2026-10-27 至 2026-11-02',
+    }), account);
+    expect(snapshot.analyticsStatus).toBe('ready');
+    expect(snapshot.metrics.find((entry) => entry.key === 'views')).toMatchObject({ value: 1799, scope: 'window' });
+    expect(snapshot.metrics.find((entry) => entry.key === 'completion_rate')?.value).toBe(1.5);
+  });
+
   it('keeps the profile reading when analytics is not populated', () => {
     const snapshot = parseDouyinCapture(capture({ overview: { status_code: 0, metrics: [{}] }, analyticsText: '' }), account);
     const metric = (key: string) => snapshot.metrics.find((entry) => entry.key === key);

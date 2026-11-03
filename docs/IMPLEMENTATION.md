@@ -190,6 +190,12 @@ read-side present, live integration absent; **Next** = deliberately deferred.
   the hidden page had a renderer. The collector now loads `about:blank` first, bounds every
   navigation and page script, and caps a capture at 60 seconds; the sidecar aborts at 75. The
   Sync action waits for completion and refreshes the account.
+- The current console no longer requests the old profile and overview JSON endpoints, and its
+  manager list is filter-driven. The collector now fetches the profile endpoint in the page's
+  signed-in origin, reads the displayed overview analytics when the JSON endpoint is absent,
+  and fetches the published (`status=1`) and timed (`status=0`) work lists directly with
+  `max_cursor`. A saved-session check returned a ready snapshot with the profile, five
+  published posts, analytics and history.
 
 ## Migration
 
