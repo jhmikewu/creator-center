@@ -134,6 +134,23 @@ action and adds no new UI, so there is no new before/after capture.
 - The account drawer adds a 13-week posting calendar in the identity header: month and weekday
   labels, four intensity levels and a Less/More legend.
 
+## Overview totals, graph placement and merged shading (v0.1.8)
+
+| Before — main at `8a7ea9c` | After — this PR |
+| --- | --- |
+| ![Before overview layout](before-overview-layout.png) | ![After overview layout](after-overview-layout.png) |
+| ![Before merged shading](before-merge-shading.png) | ![After merged shading](after-merge-shading.png) |
+
+- Both pairs use the 1440 × 940 viewport, the light theme and the demo workspace. The layout pair is a
+  full viewport at the top of the overview; the shading pair is cropped to the graph.
+- The four KPI cards are now one totals card, and the graph sits above the account cards.
+- Merged groups rotate through six overlays — diagonal, horizontal, vertical, cross-hatch, dots and a
+  checker — and the legend previews all six. The demo has two published merge groups, so the graph
+  shows two of the shades.
+- [before-kpi-totals.png](before-kpi-totals.png) and [after-kpi-totals.png](after-kpi-totals.png) are
+  close-ups of the totals section; [after-merge-shading-dark.png](after-merge-shading-dark.png) is the
+  graph in the dark theme.
+
 ## Original first increment
 
 | File | What it shows |

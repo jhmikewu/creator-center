@@ -17,6 +17,15 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.8',
+    date: '3 November 2026',
+    title: 'Overview totals and group shading',
+    items: [
+      'The four overview KPI cards are now one workspace-totals card, and the publishing graph sits above the account cards.',
+      'Each merged group rotates through six distinct shaded overlays, shown in the legend, so nearby groups are not read as one.',
+    ],
+  },
+  {
     version: '0.1.7',
     date: '3 November 2026',
     title: 'Post date graph and posting calendar',
@@ -126,7 +135,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.7'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.8'}</Badge>
       </header>
 
       <div className="about-grid">

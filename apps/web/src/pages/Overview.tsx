@@ -85,14 +85,14 @@ export function OverviewPage({
         </div>
       </header>
 
-      <section className="kpi-band" aria-label="Workspace totals">
-        <KpiCard
+      <section className="kpi-summary" aria-label="Workspace totals">
+        <KpiStat
           icon={<Users size={18} />}
           label="Audience across accounts"
           value={dashboard?.totals.audienceAccounts ? formatCompact(dashboard.totals.audience) : '—'}
           tone="teal"
         />
-        <KpiCard
+        <KpiStat
           icon={<TrendingUp size={18} />}
           label="Follower gain · 7 days"
           value={
@@ -102,19 +102,29 @@ export function OverviewPage({
           }
           tone="ochre"
         />
-        <KpiCard
+        <KpiStat
           icon={<Radio size={18} />}
           label="Published · 60 days"
           value={formatCompact(dashboard?.totals.publishedPosts)}
           tone="blue"
         />
-        <KpiCard
+        <KpiStat
           icon={<CalendarClock size={18} />}
           label="Scheduled"
           value={formatCompact(dashboard?.totals.upcoming)}
           tone="rose"
         />
       </section>
+
+      <PostDateGraph
+        plans={plans}
+        posts={posts}
+        accounts={accounts}
+        merges={merges}
+        today={today}
+        onOpenAccount={onOpenAccount}
+        onNewPlan={onNewPlan}
+      />
 
       <div className="overview-columns">
         <div className="overview-main">
@@ -196,16 +206,6 @@ export function OverviewPage({
         </aside>
       </div>
 
-      <PostDateGraph
-        plans={plans}
-        posts={posts}
-        accounts={accounts}
-        merges={merges}
-        today={today}
-        onOpenAccount={onOpenAccount}
-        onNewPlan={onNewPlan}
-      />
-
       <section className="freshness-strip">
         <div>
           <RefreshCw size={15} />
@@ -223,7 +223,7 @@ export function OverviewPage({
   );
 }
 
-function KpiCard({
+function KpiStat({
   icon,
   label,
   value,
@@ -235,12 +235,12 @@ function KpiCard({
   tone: 'teal' | 'ochre' | 'blue' | 'rose';
 }) {
   return (
-    <div className={cn('kpi-card', `kpi-${tone}`)}>
-      <div className="kpi-top">
-        <span className="kpi-icon">{icon}</span>
-        <span className="kpi-label">{label}</span>
+    <div className={cn('kpi-stat', `kpi-${tone}`)}>
+      <span className="kpi-stat-icon">{icon}</span>
+      <div className="kpi-stat-copy">
+        <span className="kpi-stat-label">{label}</span>
+        <strong className="kpi-stat-value">{value}</strong>
       </div>
-      <strong className="kpi-value">{value}</strong>
     </div>
   );
 }

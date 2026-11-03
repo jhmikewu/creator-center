@@ -7,6 +7,8 @@ export interface PostDateBlock {
   account: Account;
   /** The merge this post belongs to, when it is part of a cross-post group. */
   merge: Merge | null;
+  /** Stable shading slot for the merge group, so groups stay distinguishable. */
+  mergeShade: number | null;
 }
 
 export interface PostDateDay {
@@ -35,6 +37,13 @@ export interface PostDateGraphInput {
 
 export const DEFAULT_POST_DATE_DAYS = 30;
 
+/** Distinct merged-group shading patterns rotated through the merge list. */
+export const MERGE_SHADE_COUNT = 6;
+
+export function mergeShadeForIndex(index: number): number {
+  return ((index % MERGE_SHADE_COUNT) + MERGE_SHADE_COUNT) % MERGE_SHADE_COUNT;
+}
+
 /**
  * Published posts in the trailing window, bucketed by Shanghai calendar day and
  * stacked within each day. Merged posts keep their platform block and carry the
@@ -52,9 +61,11 @@ export function buildPostDateGraph({
   const start = addDays(today, -(span - 1));
   const accountById = new Map(accounts.map((account) => [account.id, account]));
   const mergeByPostId = new Map<string, Merge>();
-  for (const merge of merges) {
+  const mergeShadeById = new Map<string, number>();
+  merges.forEach((merge, index) => {
+    mergeShadeById.set(merge.id, mergeShadeForIndex(index));
     for (const member of merge.members) mergeByPostId.set(member.postId, merge);
-  }
+  });
 
   const blocks: PostDateBlock[] = [];
   for (const post of posts) {
@@ -63,7 +74,13 @@ export function buildPostDateGraph({
     if (!account) continue;
     const day = shanghaiDay(post.publishedAt);
     if (!day || day < start || day > end) continue;
-    blocks.push({ post, account, merge: mergeByPostId.get(post.id) ?? null });
+    const merge = mergeByPostId.get(post.id) ?? null;
+    blocks.push({
+      post,
+      account,
+      merge,
+      mergeShade: merge ? mergeShadeById.get(merge.id) ?? 0 : null,
+    });
   }
   blocks.sort((left, right) => {
     const byTime = (left.post.publishedAt ?? '').localeCompare(right.post.publishedAt ?? '');

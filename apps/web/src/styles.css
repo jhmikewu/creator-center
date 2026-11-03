@@ -59,7 +59,7 @@
   --chart-bilibili: #0099cc;
   --chart-youtube: #e5484d;
   --overlay: rgba(12, 20, 16, 0.46);
-  --graph-hatch: rgba(255, 255, 255, 0.58);
+  --graph-hatch: rgba(255, 255, 255, 0.7);
 }
 
 :root[data-theme="dark"] {
@@ -99,7 +99,7 @@
   --chart-bilibili: #4ec7f3;
   --chart-youtube: #ff7b80;
   --overlay: rgba(0, 0, 0, 0.62);
-  --graph-hatch: rgba(8, 16, 13, 0.52);
+  --graph-hatch: rgba(8, 16, 13, 0.62);
 }
 
 *,
@@ -1377,36 +1377,36 @@ button:disabled {
   font-size: calc(12px * var(--font-scale));
 }
 
-.kpi-band {
+.kpi-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.kpi-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 136px;
-  padding: 17px 18px 15px;
-  background: var(--surface);
+  gap: 1px;
+  background: var(--line);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
 
-.kpi-card::before {
+.kpi-stat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 15px 18px;
+  background: var(--surface);
+}
+
+.kpi-stat::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 18px;
-  right: 18px;
+  left: 0;
+  right: 0;
   height: 2px;
-  border-radius: 0 0 3px 3px;
   background: var(--kpi-color);
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .kpi-teal { --kpi-color: var(--accent); }
@@ -1414,44 +1414,39 @@ button:disabled {
 .kpi-blue { --kpi-color: var(--info); }
 .kpi-rose { --kpi-color: var(--rose); }
 
-.kpi-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.kpi-icon {
+.kpi-stat-icon {
   display: grid;
+  flex: 0 0 auto;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   color: var(--kpi-color);
   background: color-mix(in srgb, var(--kpi-color) 11%, transparent);
 }
 
-.kpi-label {
-  font-size: calc(10.5px * var(--font-scale));
+.kpi-stat-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.kpi-stat-label {
+  font-size: calc(9.5px * var(--font-scale));
   font-weight: 650;
   letter-spacing: 0.05em;
+  line-height: 1.25;
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.kpi-value {
-  margin-top: 4px;
+.kpi-stat-value {
   font-family: var(--font-display);
-  font-size: clamp(28px, 2.7vw, 38px);
+  font-size: clamp(26px, 2.4vw, 34px);
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.03em;
-}
-
-.kpi-hint {
-  margin-top: auto;
-  font-size: calc(10.5px * var(--font-scale));
-  line-height: 1.4;
-  color: var(--faint);
 }
 
 .overview-columns {
@@ -2050,19 +2045,61 @@ button:disabled {
   outline-offset: 2px;
 }
 
-/* Horizontal stripes would read as extra block boundaries in a vertical
-   stack, so merged groups use the diagonal hatch instead. */
-.post-graph-block.is-merged::after {
+/* Merged groups rotate through six distinct overlays, so two groups that
+   happen to sit side by side are not read as one. */
+.post-graph-block.is-merged::after,
+.post-graph-swatch.is-merged::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--graph-hatch) 0 2px,
-    transparent 2px 5px
-  );
+  background-image: var(--merge-pattern);
+  background-position: var(--merge-pattern-position, 0 0);
+  background-size: var(--merge-pattern-size, auto);
   pointer-events: none;
+}
+
+.merge-shade-0 {
+  --merge-pattern: repeating-linear-gradient(
+    45deg,
+    var(--graph-hatch) 0 2.5px,
+    transparent 2.5px 7px
+  );
+}
+
+.merge-shade-1 {
+  --merge-pattern: repeating-linear-gradient(
+    0deg,
+    var(--graph-hatch) 0 2.5px,
+    transparent 2.5px 7px
+  );
+}
+
+.merge-shade-2 {
+  --merge-pattern: repeating-linear-gradient(
+    90deg,
+    var(--graph-hatch) 0 2.5px,
+    transparent 2.5px 7px
+  );
+}
+
+.merge-shade-3 {
+  --merge-pattern:
+    repeating-linear-gradient(45deg, var(--graph-hatch) 0 1.6px, transparent 1.6px 6px),
+    repeating-linear-gradient(-45deg, var(--graph-hatch) 0 1.6px, transparent 1.6px 6px);
+}
+
+.merge-shade-4 {
+  --merge-pattern: radial-gradient(circle, var(--graph-hatch) 1.4px, transparent 1.8px);
+  --merge-pattern-size: 6px 6px;
+}
+
+.merge-shade-5 {
+  --merge-pattern:
+    linear-gradient(45deg, var(--graph-hatch) 25%, transparent 25% 75%, var(--graph-hatch) 75%),
+    linear-gradient(45deg, var(--graph-hatch) 25%, transparent 25% 75%, var(--graph-hatch) 75%);
+  --merge-pattern-size: 8px 8px;
+  --merge-pattern-position: 0 0, 4px 4px;
 }
 
 .post-graph-panel .empty-state {
@@ -2102,15 +2139,13 @@ button:disabled {
   overflow: hidden;
 }
 
-.post-graph-swatch.is-merged::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--graph-hatch) 0 1.5px,
-    transparent 1.5px 4px
-  );
+.post-graph-merge-swatches {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.post-graph-merge-swatches .post-graph-swatch {
+  background: var(--ink-soft);
 }
 
 .post-graph-count {
@@ -5117,9 +5152,6 @@ button:disabled {
   .overview-columns {
     grid-template-columns: minmax(0, 1fr) 310px;
   }
-  .kpi-value {
-    font-size: calc(30px * var(--font-scale));
-  }
   .worker-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -5216,7 +5248,7 @@ button:disabled {
     min-width: 0;
     width: 180px;
   }
-  .kpi-band {
+  .kpi-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .onboarding-hero {
@@ -5315,16 +5347,15 @@ button:disabled {
   .heading-actions {
     flex-wrap: wrap;
   }
-  .kpi-band {
+  .kpi-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
   }
-  .kpi-card {
-    min-height: 118px;
-    padding: 13px;
+  .kpi-stat {
+    gap: 10px;
+    padding: 13px 14px;
   }
-  .kpi-value {
-    font-size: calc(27px * var(--font-scale));
+  .kpi-stat-value {
+    font-size: calc(28px * var(--font-scale));
   }
   .overview-side {
     display: flex;
@@ -5476,6 +5507,12 @@ button:disabled {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
+  }
+}
+
+@media (max-width: 560px) {
+  .kpi-summary {
+    grid-template-columns: 1fr;
   }
 }
 
