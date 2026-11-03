@@ -24,7 +24,7 @@ Node sidecar (apps/server)
 
 React renderer (apps/web)
   ├─ workspace context: bootstrap, dashboard scope, plans, to-dos, settings
-  ├─ overview, account drawer, planner, timeline/merges, Community,
+  ├─ overview, account drawer, planner, post graph/merges, Community,
   │  Media roadmap, About/to-dos, Settings
   └─ shared domain logic imported from packages/shared
 ```
@@ -85,7 +85,7 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | MON-07 | Partial | 90-day history retained/pruned; 30-day chart shown. Seeded demo has 30 days. |
 | MON-08 | Done | Per-post metrics in the 60-day window on the account view. |
 | MON-10, MON-12 | Done | Scope switcher (all/platform/account), explicit sums and labels. |
-| MON-11 | Done | Redesigned hierarchy: KPI band, account cards, growth, distribution, timeline. |
+| MON-11 | Done | Redesigned hierarchy: KPI band, account cards, growth, distribution, 30-day posting graph. |
 
 ### Content planner (PLN)
 

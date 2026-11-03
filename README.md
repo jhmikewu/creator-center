@@ -1,13 +1,13 @@
 # Creator Center
 
 A local-first workspace for one physics creator managing five channels: **抖音, 小红书, 公众号,
-Bilibili and YouTube**. It keeps the account model, content planner, publishing timeline,
+Bilibili and YouTube**. It keeps the account model, content planner, posting graph,
 analytics and community monitor in one standalone application instead of a LAN dashboard with
 Docker, a separate browser host and a watchdog.
 
 > **Status: live collection started.** The desktop shell, local API, SQLite workspace,
-> per-account model, redesigned overview, detailed account view, content planner, timeline,
-> cross-post merges, Community monitor, About/to-dos and the old-workspace import are
+> per-account model, redesigned overview, detailed account view, content planner, posting
+> graph, cross-post merges, Community monitor, About/to-dos and the old-workspace import are
 > implemented. The embedded per-account sessions and all four browser collectors (抖音, Bilibili,
 > 小红书 and 公众号) are in. YouTube OAuth, media processing, cover rendering and
 > installers are the next increments. The boundaries are listed under
@@ -33,18 +33,17 @@ set is in [docs/screenshots](docs/screenshots).
   posts and history. The overview labels every account, and the scope switcher filters all
   numbers to all accounts, one platform or one account.
 - **Cleaner overview.** A KPI band, account cards, a follower dot pool with seven-day gains,
-  platform distribution, Community growth and a publishing timeline.
+  platform distribution, Community growth and a 30-day posting graph.
 - **Detailed account view.** Identity, session/analytics/content state, a compact metric view
   (followers, posts, likes, comments, shares) that expands to every metric with its scope,
-  availability, period, source and reason, follower history, published and scheduled content,
-  plans targeting the account, and account actions.
+  availability, period, source and reason, follower history, a GitHub-style posting calendar,
+  published and scheduled content, plans targeting the account, and account actions.
 - **Content planner.** Five content types, default channels and formats, optional date, notes
   hashtags, exam tag aliases, tag catalogue, platform/all-account or specific-account targets,
   publication links, unsaved-change protection and delete confirmation.
-- **Timeline.** Fifteen-day calendar in Asia/Shanghai with Video and Print lanes, distinct plan,
-  published, scheduled and merged cards, per-account metrics, drag/keyboard rescheduling, plan
-  publication links, 2–5 post merges (one per account), unmerge, undated ideas and a full plan
-  list.
+- **Posting graph.** Thirty days of published posts in Asia/Shanghai as square blocks stacked
+  per day, platform colours, a diagonal hatch for merged groups, and click-through to the post or
+  its merge. The account drawer adds a GitHub-style posting calendar.
 - **Community monitor.** A configurable Discourse status endpoint, cached last-good snapshot,
   connectivity/authentication/latency, all-time/24-hour/7-day catalogue counts, worker and timer
   health, mention/graph/PDF status and 30-day growth history.
@@ -141,20 +140,20 @@ stale or error truthfully. YouTube is disabled while its OAuth collector is defe
 ## Tests and checks
 
 ```sh
-npm test          # 58 domain/API/database tests
+npm test          # 75 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```
 
 The tests cover tag normalisation and exam aliases, plan defaults/validation, target resolution,
-timeline placement/lanes/merges, merge validation, SQLite migrations, account isolation, plan
+posting-graph bucketing, merge validation, calendar alignment, SQLite migrations, account isolation, plan
 publication links, dashboard scoping, to-dos, demo seeding/removal and API validation errors.
 
 ## Project layout
 
 ```
 packages/shared   Domain types, platform capabilities, time, metrics, tags,
-                  planning, merges and the pure timeline model.
+                  planning, merges and the pure posting-graph model.
 apps/server       Local Express API, SQLite schema/migrations, repositories,
                   sync coordinator, platform-adapter contract, demo seed.
 apps/web          React 19 + Vite renderer, design tokens and all workspace views.

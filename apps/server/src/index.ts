@@ -7,7 +7,7 @@ import { getSettings } from './repositories/settings.js';
 import { SyncService } from './services/sync.js';
 import { createApp } from './api.js';
 
-export const APP_VERSION = '0.1.6';
+export const APP_VERSION = '0.1.7';
 
 export interface LocalServerOptions {
   dataDir?: string;
