@@ -112,6 +112,11 @@ the owner's signed-in session, so only the Add account entry point is shown.
 小红书 joins 抖音 and Bilibili. Its account view uses the existing **Sign in** action; this
 collector adds no new UI, so there is no new before/after capture.
 
+## 公众号 live collection (v0.1.6)
+
+公众号 joins the other browser collectors. It uses the account view's existing **Sign in**
+action and adds no new UI, so there is no new before/after capture.
+
 ## Original first increment
 
 | File | What it shows |

@@ -8,8 +8,8 @@ Docker, a separate browser host and a watchdog.
 > **Status: live collection started.** The desktop shell, local API, SQLite workspace,
 > per-account model, redesigned overview, detailed account view, content planner, timeline,
 > cross-post merges, Community monitor, About/to-dos and the old-workspace import are
-> implemented. The embedded per-account sessions and the 抖音, Bilibili and 小红书 live collectors are in.
-> 公众号, YouTube OAuth, media processing, cover rendering and
+> implemented. The embedded per-account sessions and all four browser collectors (抖音, Bilibili,
+> 小红书 and 公众号) are in. YouTube OAuth, media processing, cover rendering and
 > installers are the next increments. The boundaries are listed under
 > [What remains](#what-remains) and in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
@@ -58,12 +58,11 @@ set is in [docs/screenshots](docs/screenshots).
 - **Old-workspace import.** An opt-in Settings workflow and CLI migrate the old app's accounts,
   metrics, history, posts, plans, tags, merges, to-dos and Community history. Preview first,
   require an empty workspace, and create a timestamped database backup automatically.
-- **Live 抖音, Bilibili and 小红书 collection.** Sign in from an account; each account gets an
+- **Live collection for all four browser platforms.** Sign in from an account; each account gets an
   isolated persistent browser session. The sidecar asks the desktop collector bridge for a
   read-only creator-console snapshot (profile, metrics, published and scheduled posts,
-  follower history) and writes it through the normal atomic sync. 公众号 stays truthfully
-  login-required or setup-required until its collector lands; YouTube is disabled while its
-  OAuth collector is deferred.
+  follower history) and writes it through the normal atomic sync. The four read the signed-in
+  consoles; YouTube is disabled while its OAuth collector is deferred.
 
 ## Run it
 
@@ -131,12 +130,13 @@ partition per account; cookies stay in the desktop app. The sidecar asks the des
 bridge for a read-only snapshot, then the existing atomic sync writes it. The bridge is
 loopback-only and never exposes cookies.
 
-抖音, Bilibili and 小红书 are ported. 抖音 reads the profile, published and timed work lists and
-the overview analytics. Bilibili reads the profile, lifetime totals, followers, published
+All four browser collectors are ported. 抖音 reads the profile, published and timed work lists
+and the overview analytics. Bilibili reads the profile, lifetime totals, followers, published
 videos, timed releases and video analytics. 小红书 reads the profile, followers, seven-day
-note analytics, published notes and timed releases. A signed-out or failed collection keeps
-the last good reading and reports login-required, stale or error truthfully. 公众号 is the
-remaining browser collector; YouTube is disabled while its OAuth collector is deferred.
+note analytics, published notes and timed releases. 公众号 reads the console totals, publish
+list and recent articles, with the useranalysis report for the handle and verification state.
+A signed-out or failed collection keeps the last good reading and reports login-required,
+stale or error truthfully. YouTube is disabled while its OAuth collector is deferred.
 
 ## Tests and checks
 
@@ -167,9 +167,8 @@ docs              Architecture/requirements mapping and visual evidence.
 
 These are deliberate next increments, not hidden gaps:
 
-1. **Live collection.** 抖音 and Bilibili are implemented with embedded isolated sessions. The
-   小红书 and 公众号 collectors remain; YouTube is disabled while its OAuth collector is
-   deferred.
+1. **Live collection.** All four browser collectors are implemented with embedded isolated
+   sessions. YouTube is disabled while its OAuth collector is deferred.
 2. **Media pipeline.** Local FFmpeg inbox watching, full-MP4 conversion, chapter/exclusion
    planning, two-screen alignment/join, clip previews/downloads, archive/link recovery and the
    optional Unraid worker/NFS endpoint. The settings page already stores its paths.
