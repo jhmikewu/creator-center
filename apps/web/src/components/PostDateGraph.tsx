@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { CalendarPlus, Layers, Plus } from 'lucide-react';
 import {
+  MERGE_SHADE_COUNT,
   PLATFORMS,
   buildPostDateGraph,
   formatDay,
@@ -96,14 +97,18 @@ export function PostDateGraph({
                   >
                     <span className="post-graph-month">{monthMark}</span>
                     <div className="post-graph-stack">
-                      {day.blocks.map(({ post, account, merge }) => {
+                      {day.blocks.map(({ post, account, merge, mergeShade }) => {
                         const title = merge ? mergeTitle(merge, posts) : post.title || 'Untitled post';
                         const label = `${formatDay(day.day, { weekday: 'short', month: 'short', day: 'numeric' })} · ${PLATFORMS[account.platform].label} · ${account.displayName} · ${title}${merge ? ' · merged group' : ''}`;
                         return (
                           <button
                             key={post.id}
                             type="button"
-                            className={cn('post-graph-block', merge && 'is-merged')}
+                            className={cn(
+                              'post-graph-block',
+                              merge && 'is-merged',
+                              merge !== null && `merge-shade-${mergeShade ?? 0}`,
+                            )}
                             style={{ '--block-color': PLATFORM_CHART_COLORS[account.platform] } as React.CSSProperties}
                             aria-label={label}
                             title={label}
@@ -136,9 +141,16 @@ export function PostDateGraph({
             </span>
           ))}
           {graph.mergedGroups > 0 && (
-            <span className="post-graph-legend-item">
-              <span className="post-graph-swatch is-merged" style={{ background: 'var(--ink-soft)' }} />
-              Merged
+            <span className="post-graph-legend-item" title="Each merged group uses a different shade">
+              <span className="post-graph-merge-swatches" aria-hidden="true">
+                {Array.from({ length: MERGE_SHADE_COUNT }, (_, index) => (
+                  <span
+                    key={index}
+                    className={cn('post-graph-swatch', 'is-merged', `merge-shade-${index}`)}
+                  />
+                ))}
+              </span>
+              Merged groups
             </span>
           )}
         </div>

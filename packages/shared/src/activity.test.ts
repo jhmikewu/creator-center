@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  MERGE_SHADE_COUNT,
   buildPostCalendar,
   buildPostDateGraph,
+  mergeShadeForIndex,
   postCalendarLevel,
   weekStart,
 } from './activity.js';
@@ -129,6 +131,34 @@ describe('post date graph', () => {
     expect(graph.mergedGroups).toBe(1);
     const merged = graph.days.flatMap((day) => day.blocks).filter((block) => block.merge !== null);
     expect(merged).toHaveLength(2);
+    expect(merged.map((block) => block.mergeShade)).toEqual([0, 0]);
+    const plain = graph.days.flatMap((day) => day.blocks).find((block) => block.merge === null);
+    expect(plain?.mergeShade).toBeNull();
+  });
+
+  it('rotates a distinct shading slot through merged groups', () => {
+    expect(MERGE_SHADE_COUNT).toBeGreaterThan(5);
+    expect([0, 1, 5, 6, 7, -1].map(mergeShadeForIndex)).toEqual([0, 1, 5, 0, 1, 5]);
+    const first = makePost('one', douyin, '2026-10-20');
+    const second = makePost('two', xhs, '2026-10-20');
+    const third = makePost('three', bili, '2026-10-21');
+    const fourth = makePost('four', douyin, '2026-10-21');
+    const graph = buildPostDateGraph({
+      accounts: [douyin, xhs, bili],
+      posts: [first, second, third, fourth],
+      merges: [makeMerge('merge-a', [first, second]), makeMerge('merge-b', [third, fourth])],
+      today,
+    });
+    const shades = new Map(
+      graph.days
+        .flatMap((day) => day.blocks)
+        .filter((block) => block.merge !== null)
+        .map((block) => [block.post.id, block.mergeShade]),
+    );
+    expect(shades.get('one')).toBe(0);
+    expect(shades.get('two')).toBe(0);
+    expect(shades.get('three')).toBe(1);
+    expect(shades.get('four')).toBe(1);
   });
 });
 

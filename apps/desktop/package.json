@@ -1,6 +1,6 @@
 {
   "name": "@creator-center/desktop",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "type": "commonjs",
   "main": "dist/main.js",
@@ -11,8 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@creator-center/server": "0.1.7",
-    "@creator-center/shared": "0.1.7"
+    "@creator-center/server": "0.1.8",
+    "@creator-center/shared": "0.1.8"
   },
   "devDependencies": {
     "electron": "^33.2.1",
