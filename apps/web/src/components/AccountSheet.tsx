@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   ChevronDown,
   ExternalLink,
@@ -274,7 +274,7 @@ export function AccountSheet({
                       </span>
                       <span>{metric.period || '—'}</span>
                       <span className="metric-source">
-                        {metric.source || '—'}
+                        <SourceValue value={metric.source} />
                         {metric.reason && <small>{metric.reason}</small>}
                       </span>
                     </div>
@@ -385,6 +385,21 @@ export function AccountSheet({
             .finally(() => setBusy(false));
         }}
       />
+    </>
+  );
+}
+
+function SourceValue({ value }: { value: string }) {
+  if (!value) return <>—</>;
+  const parts = value.split(/(?<=[/_])/);
+  return (
+    <>
+      {parts.map((part, index) => (
+        <Fragment key={index}>
+          {part}
+          {index < parts.length - 1 && <wbr />}
+        </Fragment>
+      ))}
     </>
   );
 }

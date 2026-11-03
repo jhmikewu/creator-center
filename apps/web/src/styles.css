@@ -3127,10 +3127,17 @@ button:disabled {
 .metric-table-head,
 .metric-row {
   display: grid;
-  grid-template-columns: 1.25fr 0.6fr 0.55fr 0.85fr 1.35fr;
+  grid-template-columns:
+    minmax(0, 1.1fr) minmax(0, 0.55fr) minmax(0, 0.55fr) minmax(0, 0.8fr)
+    minmax(0, 1.65fr);
   gap: 10px;
   align-items: baseline;
   padding: 8px 12px;
+}
+
+.metric-table-head > span,
+.metric-row > span {
+  min-width: 0;
 }
 
 .metric-table-head {
@@ -3158,6 +3165,9 @@ button:disabled {
 
 .metric-name {
   display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
   font-weight: 650;
   color: var(--ink-soft);
 }
@@ -3178,6 +3188,7 @@ button:disabled {
   flex-direction: column;
   font-size: calc(9.5px * var(--font-scale));
   line-height: 1.35;
+  overflow-wrap: anywhere;
   color: var(--muted);
 }
 

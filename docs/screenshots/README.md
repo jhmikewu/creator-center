@@ -59,9 +59,10 @@ from the follow-up head at `c2a7bb7`. After is the follow-up commit.
 
 The table is now labelled `Account metrics`, making it clear that the card belongs to the
 per-account drawer. `Choose file` and `Preview` now sit on the same row as the database field
-instead of aligning to the bottom of its hint. Metric rows now share a first-line baseline, so
-a wrapped Period or Source no longer leaves the name, value and scope floating between its two
-lines. [after-followup-metric-alignment-expanded.png](after-followup-metric-alignment-expanded.png)
+instead of aligning to the bottom of its hint. Metric rows now share a first-line baseline and
+one column grid, so headers, text and numbers line up; a wrapped Period or Source no longer
+leaves the name, value and scope floating between its two lines, and long source URLs wrap
+after path separators. [after-followup-metric-alignment-expanded.png](after-followup-metric-alignment-expanded.png)
 shows the expanded 11-metric state, including availability badges.
 
 ## Original first increment
