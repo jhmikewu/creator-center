@@ -29,6 +29,10 @@ export interface AdapterSnapshot {
   history: HistoryPoint | null;
   posts: PostInput[];
   scheduled: PostInput[];
+  /** False when the collector could not read the scheduled list; keep the saved one. */
+  scheduledAuthoritative?: boolean;
+  /** Identity refreshed from the signed-in dashboard. */
+  handle?: string | null;
 }
 
 export interface AdapterFailure {

@@ -1,6 +1,6 @@
 {
   "name": "creator-center",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "description": "A local-first desktop workspace for a physics creator: accounts, analytics, plans, timeline and community.",
   "type": "module",

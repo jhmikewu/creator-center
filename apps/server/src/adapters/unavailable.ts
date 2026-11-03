@@ -14,8 +14,8 @@ export class UnavailableAdapter implements PlatformAdapter {
       status: hadReading ? 'connected' : 'setup_required',
       keepPrevious: hadReading,
       detail: hadReading
-        ? 'This build has no live collector for this platform yet. The last good reading is kept and marked stale.'
-        : 'Live collection is not part of this first increment yet. Add a demo workspace or wait for the collector update.',
+        ? 'This platform has no live collector in this build yet. The last good reading is kept and marked stale.'
+        : 'This platform has no live collector in this build yet. Sign in is available for 抖音 only so far.',
     };
   }
 }

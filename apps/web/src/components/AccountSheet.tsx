@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ExternalLink,
   Link2,
+  LogIn,
   Pencil,
   Plus,
   Trash2,
@@ -46,6 +47,14 @@ import {
 } from './ui';
 import { TrendChart } from './charts';
 
+interface DesktopBridge {
+  connectSession?: (payload: {
+    accountId: string;
+    studioUrl: string | null;
+    platform: string;
+  }) => Promise<{ ok: boolean; detail?: string }>;
+}
+
 export function AccountSheet({
   accountId,
   onClose,
@@ -57,13 +66,14 @@ export function AccountSheet({
   onNewPlan: (accountId: string) => void;
   onAddAccount: () => void;
 }) {
-  const { loadAccountDetail, removeAccount, notify } = useWorkspace();
+  const { loadAccountDetail, removeAccount, notify, syncNow } = useWorkspace();
   const [detail, setDetail] = useState<AccountDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [showAllMetrics, setShowAllMetrics] = useState(false);
   const today = todayShanghai();
 
@@ -92,6 +102,8 @@ export function AccountSheet({
   }, [accountId, loadAccountDetail]);
 
   const account = detail?.account ?? null;
+  const bridge = (window as unknown as { creatorCenter?: DesktopBridge }).creatorCenter;
+  const canConnect = Boolean(account && !account.isDemo && account.platform !== 'youtube' && bridge?.connectSession);
   const series = account ? followerSeries(detail?.history ?? [], account.id, 30, today) : [];
   const gain = account ? followerGain(detail?.history ?? [], account.id, today) : null;
   const published = (detail?.posts ?? [])
@@ -105,6 +117,26 @@ export function AccountSheet({
   const visibleMetrics = showAllMetrics
     ? (Object.keys(METRIC_LABELS) as MetricKey[])
     : essentialMetrics;
+
+  async function connectAccount() {
+    if (!account || !bridge?.connectSession) return;
+    setConnecting(true);
+    try {
+      const result = await bridge.connectSession({
+        accountId: account.id,
+        studioUrl: account.studioUrl,
+        platform: account.platform,
+      });
+      if (result?.ok) {
+        notify('Session saved. Syncing…', 'success');
+        await syncNow();
+      } else {
+        notify(result?.detail ?? 'The sign-in window closed.', 'info');
+      }
+    } finally {
+      setConnecting(false);
+    }
+  }
 
   return (
     <>
@@ -154,6 +186,11 @@ export function AccountSheet({
                   {account.profileUrl && (
                     <Button variant="ghost" size="sm" onClick={() => openExternal(account.profileUrl as string)}>
                       <ExternalLink size={14} /> Public profile
+                    </Button>
+                  )}
+                  {canConnect && (
+                    <Button variant="ghost" size="sm" onClick={() => void connectAccount()} disabled={connecting}>
+                      <LogIn size={14} /> {connecting ? 'Signing in…' : 'Sign in'}
                     </Button>
                   )}
                   <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>

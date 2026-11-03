@@ -8,6 +8,7 @@ import {
   listHistory,
   replaceMetrics,
   saveHistoryPoint,
+  updateAccount,
   updateAccountState,
 } from '../repositories/accounts.js';
 import { postsForAccount, savePosts } from '../repositories/posts.js';
@@ -110,9 +111,15 @@ export class SyncService {
                 stale: false,
                 capturedAt: result.capturedAt,
               });
+              if (result.handle !== undefined) updateAccount(this.db, account.id, { handle: result.handle });
               replaceMetrics(this.db, account.id, result.metrics);
               if (result.history) saveHistoryPoint(this.db, result.history);
-              savePosts(this.db, account.id, [...result.posts, ...result.scheduled]);
+              savePosts(
+                this.db,
+                account.id,
+                [...result.posts, ...result.scheduled],
+                result.scheduledAuthoritative ?? true,
+              );
               deleteHistoryBefore(this.db, addDays(todayShanghai(), -90));
             });
             write();

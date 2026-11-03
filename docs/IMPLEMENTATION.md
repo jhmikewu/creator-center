@@ -66,7 +66,7 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | Requirement | Status | Notes |
 | --- | --- | --- |
 | ACC-01, ACC-02 | Done | Add accounts on all five platforms; multiple accounts per platform; stable account IDs. |
-| ACC-03, ACC-04, ACC-09, ACC-10 | Next | Embedded isolated sessions and YouTube Desktop OAuth are the collector increment. |
+| ACC-03, ACC-04, ACC-09, ACC-10 | Partial | Embedded isolated sessions and the first live collector (抖音) are in. YouTube Desktop OAuth, the other three browser collectors and connection management remain. |
 | ACC-05 | Done | Per-account status, analytics/content state, last attempt/success and re-auth action. |
 | ACC-06 | Partial | Six-hour/manual sync coordinator, overlap guard, progress and results; real adapters next. |
 | ACC-07 | Done | A failed refresh keeps the previous reading and marks it stale. |
@@ -135,7 +135,7 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | DES-04 | Done | Background sync coordinator, progress, manual sync, non-blocking UI. |
 | DES-05, DES-09, DES-10 | Next/Partial | Notification bridge exists; tray/auto-update/signing next. |
 | DES-06 | Done | Window state restore and single-instance lock. |
-| DES-07 | Partial | Cached data remains usable offline; real platform actions are blocked by unavailable adapters. |
+| DES-07 | Partial | Cached data remains usable offline; 抖音 is live, the other platform adapters remain unavailable. |
 | DES-08 | Partial | Data directory documented and visible; backup/restore next. |
 | DES-13 | Partial | External worker URL is stored; validation/health next. |
 | DES-11 | Done | English UI, platform names preserved. |
@@ -147,7 +147,7 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | --- | --- | --- |
 | UX-01..05, UX-08..10, UX-12..14 | Done | Coherent design system, account identity everywhere, detailed view with a collapsed 5-metric summary, Text size setting with live preview, visible focus, empty/loading/error states, first-run/empty-state onboarding, dirty guard, cleaner dashboard, account switcher. |
 | UX-06, UX-07, UX-11 | Done | Responsive down to laptop widths, light/dark/system, Text size scaling, macOS traffic-light spacing, About/to-dos/changelog. |
-| SEC-01, SEC-02 | Next | No secrets are stored in this increment; when sessions land they will use OS keychain/encrypted storage and log redaction. |
+| SEC-01, SEC-02 | Partial | Browser session cookies live in Electron's persistent Chromium profile; OAuth tokens are not stored yet and log redaction remains. |
 | SEC-03, SEC-04 | Done | Local-only API bind, no telemetry, no inbound listener by default. |
 | SEC-05, SEC-06 | Partial | OS account model; least-privilege file mode work next. |
 | DAT-01, DAT-07 | Done | Versioned SQLite migrations; reopening and demo seeding are tested. |
@@ -171,6 +171,21 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 - The real adapters are `UnavailableAdapter` stubs today: they explicitly report setup required
   or stale, never invent a metric. Replacing one with a live collector does not change the
   overview, planner or timeline.
+
+## Live collection
+
+- `apps/desktop/src/collector/` owns the isolated sessions. `connectSession` opens a login
+  window in a `persist:cc-account-<id>` partition; the hidden collector reuses that partition.
+- The desktop starts a loopback-only collector bridge and passes its URL to the sidecar as
+  `CREATOR_CENTER_COLLECTOR_URL`. The sidecar posts the account to `/collect` and receives only
+  the mapped capture, never cookies.
+- `apps/server/src/adapters/live.ts` uses the bridge for 抖音;
+  `apps/server/src/collectors/douyin.ts` parses the profile, published and timed work lists and
+  the overview, following the old app's verified schemas. `npm test` covers the parser and the
+  bridge adapter.
+- Only 抖音 is ported. A signed-out session reports `login_required`; a failed capture keeps the
+  previous reading and marks it stale. The other platforms stay unavailable until their
+  collectors land.
 
 ## Migration
 
@@ -225,10 +240,11 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 
 ## Verification performed
 
-- `npm test` — 44 tests, all passing (including the font-scale settings round-trip and a synthetic old-database import).
+- `npm test` — 58 tests, all passing (including the font-scale settings round-trip, the synthetic old-database import, the 抖音 parser and the live bridge adapter).
 - `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
 - `npm run build` — all four packages build; Vite production bundle produced.
 - API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.
+- Live collector smoke: the desktop bridge received the sidecar request, the signed-out 抖音 partition returned `login_required`, and the sync updated the account state.
 - Desktop shell: Electron launched the sidecar on an ephemeral port, `/api/health` returned
   `desktop: true`, and the renderer loaded from the built assets.
 - Visual smoke: overview, account drawer collapsed/expanded metrics, planner, plan dialog, timeline,

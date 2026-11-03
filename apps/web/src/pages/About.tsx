@@ -17,6 +17,16 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.3',
+    date: '3 November 2026',
+    title: 'Live 抖音 collection',
+    items: [
+      'Added isolated per-account browser sessions with a Sign in action in the account view.',
+      'The first live collector reads the signed-in 抖音 creator console: profile, metrics, published and scheduled posts, and follower history.',
+      'The other browser collectors and YouTube OAuth are the next stage; those accounts stay truthfully setup-required or login-required until then.',
+    ],
+  },
+  {
     version: '0.1.2',
     date: '3 November 2026',
     title: 'Old workspace import',
@@ -87,7 +97,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.2'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.3'}</Badge>
       </header>
 
       <div className="about-grid">
