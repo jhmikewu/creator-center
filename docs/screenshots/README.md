@@ -167,6 +167,21 @@ action and adds no new UI, so there is no new before/after capture.
   badge instead of one wrapped native tooltip line.
 - [after-post-tooltip-long.png](after-post-tooltip-long.png) — a long title without the merge badge.
 
+## Hashtag-free titles and a scrollable graph (v0.1.10)
+
+| Before — main at `ae1cbbf` | After — this PR |
+| --- | --- |
+| ![Before title with hashtags](before-title-hashtags.png) | ![After title without hashtags](after-title-hashtags.png) |
+| ![Before graph fits the panel](before-graph-fit.png) | ![After scrollable graph](after-graph-scroll.png) |
+
+- The title pair was captured with a demo post whose collected title was temporarily set to
+  "Moment of inertia in 60 seconds #AS物理 #bpho"; the repository's demo seed is unchanged. The
+  graph pair uses the 1440 × 940 viewport, light theme and demo workspace.
+- Before, all 30 days fit in 18 px blocks. After, day columns are 42 px with 22 px blocks; the
+  graph scrolls horizontally, opens at the most recent day and fades the edge with hidden days.
+- [after-graph-scroll-start.png](after-graph-scroll-start.png) — the same graph scrolled to the
+  oldest day.
+
 ## Original first increment
 
 | File | What it shows |

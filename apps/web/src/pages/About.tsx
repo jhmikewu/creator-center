@@ -17,6 +17,15 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.10',
+    date: '3 November 2026',
+    title: 'Hashtag-free titles and a scrollable graph',
+    items: [
+      'Collected post titles hide platform hashtags such as #AS物理 in every view: the graph hover card, post detail, account content, merge editor and publication links. Stored titles are unchanged.',
+      'The publishing graph is horizontally scrollable with wider day columns and opens at the most recent day; edge fades show which side still has days to reveal.',
+    ],
+  },
+  {
     version: '0.1.9',
     date: '3 November 2026',
     title: 'Publishing graph order and hover card',
@@ -145,7 +154,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.9'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.10'}</Badge>
       </header>
 
       <div className="about-grid">

@@ -6,3 +6,4 @@ export * from './tags.js';
 export * from './planning.js';
 export * from './merges.js';
 export * from './activity.js';
+export * from './titles.js';

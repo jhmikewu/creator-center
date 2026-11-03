@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { Account, Merge, Plan, Post } from '@creator-center/shared';
-import { formatCompact, formatDay } from '@creator-center/shared';
+import { formatCompact, formatDay, postTitle } from '@creator-center/shared';
 import { useWorkspace } from '../state';
 import { cn } from '../utils';
 import { Button, Modal, PlatformMark, Select, TextInput } from './ui';
@@ -142,7 +142,7 @@ export function MergeDialog({
                   <input type="checkbox" checked={checked} onChange={() => toggle(post)} />
                   <PlatformMark platform={account.platform} size="sm" />
                   <span className="merge-option-body">
-                    <strong>{post.title || 'Untitled post'}</strong>
+                    <strong>{postTitle(post)}</strong>
                     <small>
                       {account.displayName} · {post.status === 'scheduled' ? 'scheduled' : formatDay(post.publishedAt?.slice(0, 10) ?? '', { month: 'short', day: 'numeric' })} · {formatCompact(post.metrics.views)} views
                     </small>
@@ -169,7 +169,7 @@ export function MergeDialog({
                 <option value="">First post with a title</option>
                 {selectedPosts.map((post) => (
                   <option key={post.id} value={post.id}>
-                    {post.title || 'Untitled post'}
+                    {postTitle(post)}
                   </option>
                 ))}
               </Select>

@@ -44,8 +44,10 @@ set is in [docs/screenshots](docs/screenshots).
 - **Posting graph.** Thirty days of published posts in Asia/Shanghai as square blocks stacked
   per day, platform colours, a different shade for each merged group, merged groups stacked
   together in platform order, and a multi-line hover card with the date, platform/account, title
-  and merge state. Click-through opens the post or its merge. The account drawer adds a
-  GitHub-style posting calendar.
+  and merge state. Click-through opens the post or its merge; the graph scrolls horizontally and
+  opens at the most recent day. The account drawer adds a GitHub-style posting calendar.
+- **Clean titles.** Collected post titles drop platform hashtags (`#AS物理`) in every view; the
+  stored title is unchanged.
 - **Community monitor.** A configurable Discourse status endpoint, cached last-good snapshot,
   connectivity/authentication/latency, all-time/24-hour/7-day catalogue counts, worker and timer
   health, mention/graph/PDF status and 30-day growth history.
@@ -142,7 +144,7 @@ stale or error truthfully. YouTube is disabled while its OAuth collector is defe
 ## Tests and checks
 
 ```sh
-npm test          # 77 domain/API/database tests
+npm test          # 80 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```

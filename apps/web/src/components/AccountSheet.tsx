@@ -27,6 +27,7 @@ import {
   formatMetric,
   metricByKey,
   metricDisplay,
+  postTitle,
   relativeToNow,
   todayShanghai,
 } from '@creator-center/shared';
@@ -438,7 +439,7 @@ function ContentRow({ post, account, pending = false }: { post: Post; account: A
       <div className="content-row-main">
         <PlatformMark platform={account.platform} size="sm" />
         <div>
-          <strong>{post.title || 'Untitled post'}</strong>
+          <strong>{postTitle(post)}</strong>
           <span>
             {pending
               ? `Scheduled ${post.scheduledAt ? formatDay(post.scheduledAt.slice(0, 10), { month: 'short', day: 'numeric' }) : ''}`
@@ -463,7 +464,7 @@ function ContentRow({ post, account, pending = false }: { post: Post; account: A
         )}
       </div>
       {post.url && safeHref(post.url) && (
-        <a className="content-row-link" href={safeHref(post.url)} target="_blank" rel="noreferrer" aria-label={`Open ${post.title} on the platform`}>
+        <a className="content-row-link" href={safeHref(post.url)} target="_blank" rel="noreferrer" aria-label={`Open ${postTitle(post)} on the platform`}>
           <ExternalLink size={14} />
         </a>
       )}

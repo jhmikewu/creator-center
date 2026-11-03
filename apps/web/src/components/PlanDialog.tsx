@@ -18,6 +18,7 @@ import {
   applyContentDefaults,
   canonicalTag,
   formatDay,
+  postTitle,
   resolveTargetAccounts,
   tagsFromNotes,
 } from '@creator-center/shared';
@@ -448,7 +449,7 @@ export function PlanDialog({
                             <option value="">Not linked yet</option>
                             {options.map((post) => (
                               <option key={post.id} value={post.id}>
-                                {post.title || 'Untitled post'} · {post.publishedAt ? formatDay(post.publishedAt.slice(0, 10), { month: 'short', day: 'numeric' }) : 'no date'}
+                                {postTitle(post)} · {post.publishedAt ? formatDay(post.publishedAt.slice(0, 10), { month: 'short', day: 'numeric' }) : 'no date'}
                               </option>
                             ))}
                           </Select>
