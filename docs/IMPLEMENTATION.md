@@ -93,9 +93,11 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | --- | --- | --- |
 | PLN-01..07, PLN-09, PLN-11 | Done | Full CRUD, defaults, formats, tags/aliases, filters, privacy, dirty-guard, delete confirmation, undated plans, platform/all-account/specific targets. |
 | PLN-08 | Done | One published post per selected account; links survive collection-window changes. |
-| PLN-10 | Done | Drag/drop and Alt+Up/Down reschedule; pinned publication plans stay put. |
+| PLN-10 | Partial (v0.1.7) | Plan dates are edited in the plan dialog; the overview drag surface was removed with the timeline in v0.1.7 (issue #17). Pinned publication plans still stay put. |
 
 ### Timeline, publications and merges (TML)
+
+> v0.1.7 replaces the overview timeline with the 30-day post-date graph (issue #17): the rows below describe the v0.1.6 calendar that was dropped. Merges, post details, links and scheduling data are still shown, now from the graph and the Content planner. The TML-01..03 calendar requirements are superseded by the owner's issue.
 
 | Requirement | Status | Notes |
 | --- | --- | --- |
