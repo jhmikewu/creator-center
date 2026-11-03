@@ -45,6 +45,23 @@ export function mergeShadeForIndex(index: number): number {
 }
 
 /**
+ * Bottom-to-top platform order inside a merged group. The owner's order ends at
+ * 公众号; YouTube is appended at the top because merges can include it too.
+ */
+export const MERGE_PLATFORM_STACK_ORDER: readonly Platform[] = [
+  'xiaohongshu',
+  'douyin',
+  'bilibili',
+  'wechat',
+  'youtube',
+];
+
+export function platformStackRank(platform: Platform): number {
+  const index = MERGE_PLATFORM_STACK_ORDER.indexOf(platform);
+  return index === -1 ? MERGE_PLATFORM_STACK_ORDER.length : index;
+}
+
+/**
  * Published posts in the trailing window, bucketed by Shanghai calendar day and
  * stacked within each day. Merged posts keep their platform block and carry the
  * merge id so the graph can shade the group.
@@ -62,8 +79,10 @@ export function buildPostDateGraph({
   const accountById = new Map(accounts.map((account) => [account.id, account]));
   const mergeByPostId = new Map<string, Merge>();
   const mergeShadeById = new Map<string, number>();
+  const mergeRankById = new Map<string, number>();
   merges.forEach((merge, index) => {
     mergeShadeById.set(merge.id, mergeShadeForIndex(index));
+    mergeRankById.set(merge.id, index);
     for (const member of merge.members) mergeByPostId.set(member.postId, merge);
   });
 
@@ -82,12 +101,26 @@ export function buildPostDateGraph({
       mergeShade: merge ? mergeShadeById.get(merge.id) ?? 0 : null,
     });
   }
+  // Bottom-to-top order: merged groups first (in merge order), then unmerged
+  // posts, so each group stays one contiguous block. Inside a group the
+  // platform stack order is the primary sort.
+  const unmergedRank = merges.length;
+  const rankOf = (block: PostDateBlock): number =>
+    block.merge ? mergeRankById.get(block.merge.id) ?? unmergedRank : unmergedRank;
   blocks.sort((left, right) => {
+    const byGroup = rankOf(left) - rankOf(right);
+    if (byGroup !== 0) return byGroup;
+    if (left.merge && right.merge) {
+      const byPlatform = platformStackRank(left.account.platform) - platformStackRank(right.account.platform);
+      if (byPlatform !== 0) return byPlatform;
+    }
     const byTime = (left.post.publishedAt ?? '').localeCompare(right.post.publishedAt ?? '');
     if (byTime !== 0) return byTime;
     const byPlatform =
       PLATFORM_ORDER.indexOf(left.account.platform) - PLATFORM_ORDER.indexOf(right.account.platform);
     if (byPlatform !== 0) return byPlatform;
+    const byAccount = left.account.displayName.localeCompare(right.account.displayName);
+    if (byAccount !== 0) return byAccount;
     return left.post.title.localeCompare(right.post.title);
   });
 
