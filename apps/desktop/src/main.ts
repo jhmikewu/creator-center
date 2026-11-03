@@ -191,6 +191,16 @@ function stopBackend(): void {
   }
 }
 
+ipcMain.handle('creator-center:choose-file', async () => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Choose the old Creator Center database',
+    properties: ['openFile'],
+    filters: [{ name: 'SQLite database', extensions: ['sqlite3', 'sqlite', 'db'] }],
+  });
+  return result.canceled ? null : result.filePaths[0] ?? null;
+});
+
 ipcMain.handle('creator-center:info', () => ({
   platform: process.platform,
   version: app.getVersion(),

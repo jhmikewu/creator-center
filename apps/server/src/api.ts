@@ -33,6 +33,7 @@ import { getSettings, updateSettings } from './repositories/settings.js';
 import { accountDetail, dashboardFor, parseScope } from './services/dashboard.js';
 import { getCommunityState, syncCommunity } from './services/community.js';
 import { seedDemoWorkspace, removeDemoWorkspace } from './demo/seed.js';
+import { MigrationError, importOldWorkspace, previewOldWorkspace } from './services/import-old.js';
 import type { SyncService } from './services/sync.js';
 
 export interface AppOptions {
@@ -288,6 +289,16 @@ export function createApp(options: AppOptions): Express {
     response.status(202).json({ ...result, state: sync.state() });
   });
 
+  app.post('/api/migration/old/preview', (request, response) => {
+    const source = typeof request.body?.path === 'string' ? request.body.path : '';
+    response.json(previewOldWorkspace(db, dataDir, source));
+  });
+
+  app.post('/api/migration/old', (request, response) => {
+    const source = typeof request.body?.path === 'string' ? request.body.path : '';
+    response.status(201).json(importOldWorkspace(db, dataDir, source));
+  });
+
   app.post('/api/demo/seed', (_request, response) => {
     if (listAccounts(db).length) {
       throw new HttpError(
@@ -332,6 +343,10 @@ export function createApp(options: AppOptions): Express {
     }
     if (error instanceof MergeValidationError) {
       response.status(400).json({ error: error.message });
+      return;
+    }
+    if (error instanceof MigrationError) {
+      response.status(error.status).json({ error: error.message });
       return;
     }
     console.error(error);

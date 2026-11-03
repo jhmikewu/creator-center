@@ -179,6 +179,21 @@ const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 2,
+    name: 'legacy media staging',
+    sql: `
+      CREATE TABLE legacy_media_jobs (
+        id TEXT PRIMARY KEY,
+        source_path TEXT NOT NULL,
+        source_size INTEGER,
+        source_mtime_ns INTEGER,
+        status TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        imported_at TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 export const DEFAULT_SETTINGS: Omit<AppSettings, 'dataDir'> = {

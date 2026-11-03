@@ -27,6 +27,23 @@ The Text size control scales every label, table and card (0.9–1.4 multiplier; 
 Compact 100%, Comfortable 112% and Large 130%). The preview uses the same scale. The metric detail
 opens collapsed to followers, posts, likes, comments and shares, and expands to all 11 metrics.
 
+## Old workspace import (v0.1.2)
+
+| Before — v0.1.1 settings | After — import preview |
+| --- | --- |
+| ![Before import](before-import-settings.png) | ![Import preview](after-import-preview.png) |
+
+- [after-import-preview.png](after-import-preview.png) — preview from the scrubbed old database:
+  5 accounts, 20 content items, 107 history points, 6 merges, 5 to-dos, 23 Community days and
+  10 media jobs, with destination readiness and warnings.
+- [after-import-confirm.png](after-import-confirm.png) — the explicit confirmation before writing.
+- [after-import-success.png](after-import-success.png) — imported state, backup path and the
+  "Import complete" badge.
+- [after-import-overview.png](after-import-overview.png) — the imported accounts in the workspace.
+
+The source path shown in the captures is the scrubbed database supplied for validation; the
+importer opens it read-only and never writes to it.
+
 ## Original first increment
 
 | File | What it shows |
