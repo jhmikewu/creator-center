@@ -65,6 +65,28 @@ leaves the name, value and scope floating between its two lines, and long source
 after path separators. [after-followup-metric-alignment-expanded.png](after-followup-metric-alignment-expanded.png)
 shows the expanded 11-metric state, including availability badges.
 
+## UI copy pass (v0.1.2)
+
+Implements the `AGENTS.md` UI guideline:
+
+> The project is built entirely for personal use. So most secondary labels and descriptions will be redundant since builder and user are the same person. Let the layout do most of the explaining and only add descriptive text where necessary.
+
+Before = main at `663e2a6`; after = this PR. Both use the 1440 × 940 viewport, the light theme and the imported workspace. The onboarding before capture is the existing v0.1.0 onboarding screenshot; its copy was unchanged through main.
+
+| Screen | Before (`663e2a6`) | After (copy pass) |
+| --- | --- | --- |
+| Overview | ![Before overview](before-copy-overview.png) | ![After overview](after-copy-overview.png) |
+| Account drawer | ![Before account](before-copy-account.png) | ![After account](after-copy-account.png) |
+| Content planner | ![Before planner](before-copy-planner.png) | ![After planner](after-copy-planner.png) |
+| Community monitor | ![Before community](before-copy-community.png) | ![After community](after-copy-community.png) |
+| Media | ![Before media](before-copy-media.png) | ![After media](after-copy-media.png) |
+| Settings (top) | ![Before settings top](before-copy-settings-top.png) | ![After settings top](after-copy-settings-top.png) |
+| Settings (import) | ![Before settings import](before-copy-settings-import.png) | ![After settings import](after-copy-settings-import.png) |
+| About & to-dos | ![Before about](before-copy-about.png) | ![After about](after-copy-about.png) |
+| Onboarding | ![Before onboarding](before-copy-onboarding.png) | ![After onboarding](after-copy-onboarding.png) |
+
+The pass removes page taglines and subtitles, section descriptions, footnotes, KPI hints, field hints and the long media/community roadmap prose, while keeping labels, statuses, warnings, confirmations, empty states and metric provenance.
+
 ## Original first increment
 
 | File | What it shows |

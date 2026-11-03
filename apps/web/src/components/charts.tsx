@@ -234,7 +234,7 @@ export function FollowerDotPool({
         ))}
       </div>
       <p className="dot-caption">
-        1 dot = {formatCompact(scale)} follower{scale === 1 ? '' : 's'} · dot positions are fixed
+        1 dot = {formatCompact(scale)} follower{scale === 1 ? '' : 's'}
       </p>
     </div>
   );

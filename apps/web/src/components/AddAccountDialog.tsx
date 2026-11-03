@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Info, Layers } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { PLATFORM_ORDER, PLATFORMS, type Platform } from '@creator-center/shared';
 import { useWorkspace } from '../state';
 import { cn } from '../utils';
@@ -61,8 +61,6 @@ export function AddAccountDialog({ open, onClose }: { open: boolean; onClose: ()
       open={open}
       onClose={onClose}
       title="Add an account"
-      eyebrow="Multiple accounts per platform"
-      description="Each account gets its own id, display name, metrics, posts and history. Nothing is ever merged into a platform-wide bucket."
       width="lg"
       footer={
         <>
@@ -89,14 +87,13 @@ export function AddAccountDialog({ open, onClose }: { open: boolean; onClose: ()
                 <PlatformMark platform={key} size="md" />
                 <span>
                   <strong>{info.label}</strong>
-                  <small>{info.access}</small>
                 </span>
               </button>
             );
           })}
         </div>
         <div className="form-grid">
-          <Field label="Display name" required hint="How this account is identified in the workspace.">
+          <Field label="Display name" required>
             <TextInput
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
@@ -105,30 +102,19 @@ export function AddAccountDialog({ open, onClose }: { open: boolean; onClose: ()
               autoFocus
             />
           </Field>
-          <Field label="Handle" hint="Optional. Used for the public profile link where the platform supports it.">
+          <Field label="Handle">
             <TextInput
               value={handle}
               onChange={(event) => setHandle(event.target.value)}
               placeholder={platform === 'youtube' ? 'liamphysics' : '@handle'}
             />
           </Field>
-          <Field label="Public profile URL" hint="Optional; leave blank to use the platform default.">
+          <Field label="Public profile URL">
             <TextInput value={profileUrl} onChange={(event) => setProfileUrl(event.target.value)} type="url" placeholder="https://" />
           </Field>
-          <Field label="Creator studio URL" hint="Opened from the account view. A sensible default is filled when blank.">
+          <Field label="Creator studio URL">
             <TextInput value={studioUrl} onChange={(event) => setStudioUrl(event.target.value)} type="url" placeholder="https://" />
           </Field>
-        </div>
-        <div className="info-callout">
-          <Info size={17} />
-          <div>
-            <strong>Collection is the next increment.</strong>
-            <p>
-              This build creates the account record and the per-account data model. The embedded
-              signed-in browser session, the four browser collectors and the YouTube OAuth flow are
-              the next piece of work; a real account shows its setup state until then.
-            </p>
-          </div>
         </div>
         {!settings?.demoMode && (bootstrap?.accounts.length ?? 0) === 0 && (
           <button type="button" className="demo-link" onClick={() => void demo()} disabled={busy}>

@@ -154,7 +154,6 @@ export function Timeline({
             Publishing timeline
           </div>
           <h2 id="timeline-heading">Plans and releases</h2>
-          <p>Plans, published posts and platform-scheduled releases in Asia/Shanghai.</p>
         </div>
         <div className="timeline-actions">
           <div className="timeline-window">
@@ -614,8 +613,7 @@ function PostDetailModal({
           <p className="muted">No per-post statistics were returned for this post.</p>
         )}
         <p className="subtle-note">
-          Collected {formatDay(detail.post.collectedAt.slice(0, 10), { month: 'short', day: 'numeric' })}. A post can
-          leave the 60-day window while its plan link stays intact.
+          Collected {formatDay(detail.post.collectedAt.slice(0, 10), { month: 'short', day: 'numeric' })}.
         </p>
       </div>
     </Modal>
@@ -727,8 +725,7 @@ function MergeDialog({
       open
       onClose={onClose}
       title={merge ? 'Edit merged posts' : 'Merge cross-posted content'}
-      eyebrow="One card, separate statistics"
-      description="Merge 2–5 collected posts that carry the same content, at most one per account."
+      description="Merge 2–5 posts; one per account."
       width="lg"
       footer={
         <>

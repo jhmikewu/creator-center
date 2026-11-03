@@ -115,10 +115,7 @@ export function App() {
           <span className="brand-symbol">
             <Atom size={25} strokeWidth={1.6} />
           </span>
-          <div>
-            <strong>Creator Center</strong>
-            <span>Personal workspace</span>
-          </div>
+          <strong>Creator Center</strong>
           <IconButton label="Close navigation" className="mobile-close" onClick={() => setMobileNav(false)}>
             <X size={20} />
           </IconButton>
@@ -251,10 +248,6 @@ export function App() {
           ) : (
             <SettingsPage onAddAccount={() => setAddAccountOpen(true)} />
           )}
-          <footer className="workspace-footer">
-            <span>Private workspace · Asia/Shanghai</span>
-            <span>Local SQLite · no telemetry</span>
-          </footer>
         </main>
       </div>
 

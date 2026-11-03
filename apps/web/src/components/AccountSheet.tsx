@@ -111,7 +111,7 @@ export function AccountSheet({
       <Drawer
         open={Boolean(accountId)}
         onClose={onClose}
-        eyebrow={account ? `${PLATFORMS[account.platform].label} · ${PLATFORMS[account.platform].access}` : 'Account'}
+        eyebrow={account ? PLATFORMS[account.platform].label : 'Account'}
         title={account?.displayName ?? (loading ? 'Opening account…' : 'Account')}
         width="wider"
         headerExtra={
@@ -178,7 +178,6 @@ export function AccountSheet({
             <section className="detail-section">
               <div className="detail-section-head">
                 <h4>Access and freshness</h4>
-                <span>Source-level status, not the page-fetch time.</span>
               </div>
               <div className="status-grid">
                 <div>
@@ -215,7 +214,6 @@ export function AccountSheet({
                     <strong>{formatCompact(series[series.length - 1]?.value ?? null)}</strong>
                     <span>followers today</span>
                   </div>
-                  <span className="muted">Only measured dates are drawn; missing days are not interpolated.</span>
                 </div>
                 <TrendChart
                   points={series}
@@ -295,7 +293,7 @@ export function AccountSheet({
                   ))}
                 </div>
               ) : (
-                <p className="muted">No published posts in the current collection window.</p>
+                <p className="muted">No published posts.</p>
               )}
             </section>
 
@@ -327,23 +325,10 @@ export function AccountSheet({
                   ))}
                 </div>
               ) : (
-                <p className="muted">No plans target this account yet.</p>
+                <p className="muted">No plans.</p>
               )}
             </section>
 
-            <section className="detail-section detail-data-note">
-              <div>
-                <strong>Local account data</strong>
-                <p>
-                  This account is keyed by its own ID, so a second account on {PLATFORMS[account.platform].label}{' '}
-                  cannot overwrite its metrics, posts or history. Removing it wipes the local cache after
-                  confirmation.
-                </p>
-              </div>
-              <Button variant="secondary" size="sm" onClick={() => setConfirmRemove(true)}>
-                <Trash2 size={14} /> Remove account
-              </Button>
-            </section>
           </div>
         ) : (
           <div className="drawer-loading">
@@ -514,7 +499,6 @@ function EditAccountDialog({
       open={open}
       onClose={onClose}
       title="Edit account details"
-      description="These labels identify the account everywhere. The platform handle and links are optional."
       width="md"
       footer={
         <>
@@ -529,7 +513,7 @@ function EditAccountDialog({
         <Field label="Display name" required>
           <TextInput value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={120} />
         </Field>
-        <Field label="Handle" hint="Without the @; used to build the public profile link.">
+        <Field label="Handle">
           <TextInput value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="liamphysics" />
         </Field>
         <Field label="Public profile URL">

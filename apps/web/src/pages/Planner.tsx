@@ -118,7 +118,7 @@ export function PlannerPage({
         <EmptyState
           icon={<CalendarDays size={28} />}
           title="Add an account to start planning"
-          message="Plans are local, but they need at least one account to target. Add an account or load the demo workspace."
+          message="Add an account or load the demo workspace."
           action={<Button onClick={onAddAccount}><Plus size={16} /> Add account</Button>}
         />
       </div>
@@ -129,9 +129,7 @@ export function PlannerPage({
     <div className="page planner-page">
       <header className="page-heading">
         <div>
-          <span className="eyebrow">PRIVATE BY DESIGN</span>
           <h1>Content planner</h1>
-          <p>Capture the idea, choose its channels and give it a date. Saving never publishes anything.</p>
         </div>
         <div className="heading-actions">
           <Button variant="secondary" onClick={() => onNewPlan({ format: 'print' })}>
@@ -144,10 +142,10 @@ export function PlannerPage({
       </header>
 
       <section className="planner-stats" aria-label="Planner summary">
-        <div><span>All plans</span><strong>{plans.length}</strong><small>across the workspace</small></div>
-        <div><span>Upcoming</span><strong>{plans.filter((plan) => plan.scheduledFor && plan.scheduledFor >= today && !plan.publications.length).length}</strong><small>dated and not yet published</small></div>
-        <div><span>Linked</span><strong>{linked}</strong><small>plans linked to collected posts</small></div>
-        <div><span>This month</span><strong>{thisMonth}</strong><small>plans on the calendar</small></div>
+        <div><span>All plans</span><strong>{plans.length}</strong></div>
+        <div><span>Upcoming</span><strong>{plans.filter((plan) => plan.scheduledFor && plan.scheduledFor >= today && !plan.publications.length).length}</strong></div>
+        <div><span>Linked</span><strong>{linked}</strong></div>
+        <div><span>This month</span><strong>{thisMonth}</strong></div>
       </section>
 
       <div className="planner-layout">
@@ -219,9 +217,9 @@ export function PlannerPage({
           {filtered.length === 0 ? (
             <EmptyState
               icon={<CalendarDays size={26} />}
-              title="No plans match these filters"
-              message="Try clearing a filter, or start a new plan for one of your accounts."
-              action={<Button variant="secondary" onClick={clearFilters}>Clear filters</Button>}
+              title={plans.length === 0 ? 'No plans yet' : 'No plans match these filters'}
+              message={plans.length === 0 ? 'Start a new plan.' : 'Clear a filter or start a new plan.'}
+              action={plans.length === 0 ? undefined : <Button variant="secondary" onClick={clearFilters}>Clear filters</Button>}
             />
           ) : (
             <div className="plan-list">
@@ -294,29 +292,14 @@ export function PlannerPage({
                 </button>
               ))}
             </div>
-            <div className="tag-exam-hint">
-              <strong>Exam aliases</strong>
-              <p>AS, A2, A Level / AL, AP, BPhO and PhysicsBowl all normalise to one tag.</p>
-            </div>
           </section>
 
           <section className="panel planner-tip">
             <CheckCircle2 size={18} />
             <div>
               <strong>Publication links are records, not actions.</strong>
-              <p>
-                After you publish manually, edit the plan and pick the collected post for each account.
-                The plan then shows its real publication date and statistics.
-              </p>
+              <p>Edit a plan to link a collected post.</p>
             </div>
-          </section>
-
-          <section className="panel planner-legend">
-            <span className="panel-eyebrow">Legend</span>
-            <div><Badge tone="success">Published</Badge><span>A target is linked to a collected post</span></div>
-            <div><Badge tone="accent">Planned</Badge><span>Dated, waiting on publication</span></div>
-            <div><Badge tone="neutral">Idea</Badge><span>No date yet</span></div>
-            <div><Link2 size={15} /><span>A linked target keeps its link if the post leaves 60 days</span></div>
           </section>
         </aside>
       </div>
@@ -328,9 +311,7 @@ function PageHeading({ onNewPlan }: { onNewPlan: () => void }) {
   return (
     <header className="page-heading">
       <div>
-        <span className="eyebrow">PRIVATE BY DESIGN</span>
         <h1>Content planner</h1>
-        <p>Capture the idea, choose its channels and give it a date. Saving never publishes anything.</p>
       </div>
       <Button onClick={onNewPlan}><Plus size={16} /> New plan</Button>
     </header>

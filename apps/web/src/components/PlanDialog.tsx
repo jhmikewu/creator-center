@@ -17,7 +17,6 @@ import {
   TagError,
   applyContentDefaults,
   canonicalTag,
-  formatCompact,
   formatDay,
   resolveTargetAccounts,
   tagsFromNotes,
@@ -233,7 +232,6 @@ export function PlanDialog({
         onClose={requestClose}
         title={plan ? 'Edit plan' : 'New plan'}
         eyebrow={plan ? 'Local plan' : 'Private idea'}
-        description="A plan is never published. It holds the idea, the targets, the date and links to posts you published yourself."
         width="xl"
         footer={
           <>
@@ -263,7 +261,7 @@ export function PlanDialog({
                   autoFocus
                 />
               </Field>
-              <Field label="Calendar date" hint="Optional. No time of day." error={fieldErrors.scheduledFor}>
+              <Field label="Calendar date" error={fieldErrors.scheduledFor}>
                 <div className="date-input-wrap">
                   <CalendarDays size={15} />
                   <TextInput
@@ -277,7 +275,7 @@ export function PlanDialog({
             </div>
 
             <div className="plan-controls-row">
-              <Field label="Content type" hint={CONTENT_TYPE_MAP[draft.contentType].description} error={fieldErrors.contentType}>
+              <Field label="Content type" error={fieldErrors.contentType}>
                 <Select value={draft.contentType} onChange={(event) => changeContent(event.target.value as ContentType)}>
                   {CONTENT_TYPES.map((entry) => (
                     <option key={entry.key} value={entry.key}>{entry.label}</option>
@@ -296,19 +294,11 @@ export function PlanDialog({
                 />
               </Field>
             </div>
-            <p className="form-hint-line">
-              Changing the content type reapplies its default channels and format. You can override both
-              below. Text guides default to Print; all other types default to Video.
-            </p>
 
             <div className="field">
               <div className="targets-head">
                 <div>
                   <span className="field-label">Channels and accounts</span>
-                  <p className="field-hint">
-                    Target every account on a platform, or pick specific accounts. A platform default
-                    includes accounts you add later.
-                  </p>
                 </div>
                 <span className="target-count">{resolved.length} selected</span>
               </div>
@@ -366,11 +356,11 @@ export function PlanDialog({
               </div>
             </div>
 
-            <Field label="Notes" hint="Hashtags become tags automatically. Links are ignored for tags." error={fieldErrors.notes}>
+            <Field label="Notes" hint="Hashtags become tags." error={fieldErrors.notes}>
               <TextArea
                 value={draft.notes}
                 onChange={(event) => update('notes', event.target.value)}
-                placeholder="Outline, references, the hook, anything worth keeping. Use #tags for the catalogue."
+                placeholder="Outline, references, the hook."
                 rows={6}
                 maxLength={20_000}
               />
@@ -380,7 +370,6 @@ export function PlanDialog({
               <div className="targets-head">
                 <div>
                   <span className="field-label">Tags</span>
-                  <p className="field-hint">Exam aliases collapse to one canonical tag. Notes hashtags are added automatically.</p>
                 </div>
                 <span className="target-count">{draft.tags.length}/30</span>
               </div>
@@ -435,7 +424,7 @@ export function PlanDialog({
                 <Link2 size={16} />
                 <div>
                   <strong>Publication links</strong>
-                  <span>Record what was published. Linking never publishes.</span>
+                  <span>Linking never publishes.</span>
                 </div>
               </div>
               {resolved.length === 0 ? (
@@ -487,7 +476,6 @@ export function PlanDialog({
                   </span>
                 ))}
               </div>
-              <p className="summary-caveat">{formatCompact(resolved.length)} targets · private to this workspace</p>
             </div>
             {error && <p className="form-error" role="alert">{error}</p>}
           </aside>

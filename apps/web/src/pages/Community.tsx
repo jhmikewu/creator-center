@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  ExternalLink,
   FileText,
   GitGraph,
   MessageSquare,
@@ -35,7 +34,7 @@ const COUNT_ROWS: { key: DiscourseCountKey; label: string; hint?: string }[] = [
 ];
 
 export function CommunityPage({ onSettings }: { onSettings: () => void }) {
-  const { dashboard, refresh, notify, settings } = useWorkspace();
+  const { dashboard, refresh, notify } = useWorkspace();
   const community = dashboard?.community;
   const snapshot = community?.snapshot ?? null;
   const today = dashboard?.today ?? new Date().toISOString().slice(0, 10);
@@ -58,9 +57,7 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
     <div className="page community-page">
       <header className="page-heading">
         <div>
-          <span className="eyebrow">LIAM'S CLUB · DISCOURSE</span>
           <h1>Community monitor</h1>
-          <p>The forum's catalogue, workers and publishing pipeline, kept separate from platform analytics.</p>
         </div>
         <div className="heading-actions">
           <Button
@@ -83,8 +80,8 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
           title="No community snapshot yet"
           message={
             community?.configured
-              ? 'The configured status endpoint has not returned a snapshot yet. Refresh it, or check the endpoint in Settings.'
-              : 'Add the forum status endpoint in Settings to see connectivity, catalogue counts and worker health here.'
+              ? 'Refresh the endpoint, or check it in Settings.'
+              : 'Add the forum status endpoint in Settings.'
           }
           action={<Button onClick={onSettings}>Open Settings</Button>}
         />
@@ -98,16 +95,9 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
               <div>
                 <div className="community-status-title">
                   <h2>{snapshot.status === 'connected' ? 'Status feed connected' : 'Status feed unavailable'}</h2>
-                  <Badge tone={snapshot.status === 'connected' ? 'success' : 'danger'}>
-                    {snapshot.status === 'connected' ? 'Connected' : 'Error'}
-                  </Badge>
                   {community?.stale && <Badge tone="warning">Stale</Badge>}
                 </div>
-                <p>
-                  {snapshot.endpoint.startsWith('demo://')
-                    ? 'Sample source · the demo workspace uses local sample data.'
-                    : snapshot.endpoint}
-                </p>
+                <p>{snapshot.endpoint}</p>
               </div>
             </div>
             <div className="community-status-facts">
@@ -128,7 +118,6 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
                   <span className="panel-eyebrow">Catalogue</span>
                   <h2>Content totals</h2>
                 </div>
-                <span className="muted">Same source date · not a rolling estimate</span>
               </div>
               <div className="counts-table">
                 <div className="counts-head">
@@ -160,10 +149,6 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
                 <Badge tone="neutral">30 days</Badge>
               </div>
               <CommunitySparklines history={community?.history ?? []} today={today} />
-              <p className="panel-footnote">
-                Only connected, complete, non-stale catalogue readings become history points. A failed
-                refresh keeps the last good snapshot.
-              </p>
             </section>
           </div>
 
@@ -216,17 +201,6 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
                 ['Pending', formatCompact(snapshot.pdfs.pending)],
               ]}
             />
-            <section className="panel community-help">
-              <span className="panel-eyebrow">How to read this</span>
-              <h3>Connected is not the same as healthy.</h3>
-              <p>
-                A reachable status feed can still report a degraded worker. The badge above describes
-                the feed; each worker card keeps its own state.
-              </p>
-              <a className="text-link" href={settings?.communityEndpoint || '#/settings'} onClick={(event) => { if (!settings?.communityEndpoint) { event.preventDefault(); onSettings(); } }}>
-                Status endpoint <ExternalLink size={12} />
-              </a>
-            </section>
           </div>
 
           <section className="panel community-meta">
@@ -238,7 +212,6 @@ export function CommunityPage({ onSettings }: { onSettings: () => void }) {
             <div>
               <span className="panel-eyebrow">History retained</span>
               <strong>{community?.history.length ?? 0} days</strong>
-              <span>Kept when the feed is unavailable</span>
             </div>
             <div>
               <span className="panel-eyebrow">Configuration</span>
