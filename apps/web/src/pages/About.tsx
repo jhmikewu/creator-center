@@ -17,6 +17,16 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.1',
+    date: '3 November 2026',
+    title: 'Readability and macOS window controls',
+    items: [
+      'Added a Text size setting (Compact, Comfortable, Large) with a live preview; every label, table and card scales together.',
+      'Metric detail now opens collapsed to followers, posts, likes, comments and shares, with one click to reveal all 11 metrics.',
+      'Moved the sidebar brand below the native macOS traffic lights and made the strip draggable.',
+    ],
+  },
+  {
     version: '0.1.0',
     date: '3 November 2026',
     title: 'First implementation increment',

@@ -10,6 +10,7 @@ import {
   Server,
   Sparkles,
   Trash2,
+  Type,
   UserPlus,
 } from 'lucide-react';
 import type { AppSettings } from '@creator-center/shared';
@@ -25,6 +26,12 @@ import {
   StatusDot,
   TextInput,
 } from '../components/ui';
+
+const FONT_SCALES: { value: number; label: string; hint: string }[] = [
+  { value: 1, label: 'Compact', hint: 'Fits smaller screens' },
+  { value: 1.12, label: 'Comfortable', hint: 'Recommended' },
+  { value: 1.3, label: 'Large', hint: 'Easier reading' },
+];
 
 export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
   const {
@@ -59,15 +66,28 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
 
   if (!settings) return null;
 
-  async function save(patch: Partial<AppSettings>) {
+  async function save(patch: Partial<AppSettings>): Promise<boolean> {
     setBusy(true);
     try {
       await saveSettings(patch);
+      return true;
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Could not save settings.', 'error');
+      return false;
     } finally {
       setBusy(false);
     }
+  }
+
+  function applyFontScale(value: number) {
+    document.documentElement.style.setProperty('--font-scale', String(value));
+  }
+
+  async function chooseFontScale(value: number) {
+    const previous = settings?.fontScale ?? 1.12;
+    applyFontScale(value);
+    const saved = await save({ fontScale: value });
+    if (!saved) applyFontScale(previous);
   }
 
   async function copyPath() {
@@ -114,6 +134,51 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               ]}
               onChange={(theme) => void save({ theme })}
             />
+          </div>
+          <div className="font-setting">
+            <div className="font-setting-head">
+              <span className="settings-icon settings-icon-small"><Type size={15} /></span>
+              <div>
+                <strong>Text size</strong>
+                <p>Scales every label, table and card. Use Compact to fit smaller screens.</p>
+              </div>
+              <Badge tone="neutral">{Math.round((settings.fontScale ?? 1.12) * 100)}%</Badge>
+            </div>
+            <div className="font-scale-options" role="radiogroup" aria-label="Text size">
+              {FONT_SCALES.map((option) => (
+                <button
+                  key={option.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={Math.abs((settings.fontScale ?? 1.12) - option.value) < 0.01}
+                  className={cn('font-scale-option', Math.abs((settings.fontScale ?? 1.12) - option.value) < 0.01 && 'is-active')}
+                  onClick={() => void chooseFontScale(option.value)}
+                >
+                  <strong>{option.label}</strong>
+                  <span>{Math.round(option.value * 100)}%</span>
+                  <small>{option.hint}</small>
+                </button>
+              ))}
+            </div>
+            <div className="font-preview" aria-live="polite" aria-label="Text size preview">
+              <div className="font-preview-head">
+                <span className="eyebrow">Live preview</span>
+                <span className="font-preview-scale">At {Math.round((settings.fontScale ?? 1.12) * 100)}%</span>
+              </div>
+              <div className="font-preview-sample">
+                <strong className="font-preview-title">Overview</strong>
+                <p className="font-preview-body">Every channel, plan and measurement in one place.</p>
+                <div className="font-preview-metrics">
+                  <span><small>Followers</small><strong>128.4k</strong></span>
+                  <span><small>Published · 60 days</small><strong>20</strong></span>
+                  <span><small>Latest measurement</small><strong>2 min ago</strong></span>
+                </div>
+                <div className="font-preview-foot">
+                  <Badge tone="success">Connected</Badge>
+                  <span className="font-preview-tiny">The smallest labels scale with this setting.</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

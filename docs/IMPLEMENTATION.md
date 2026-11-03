@@ -145,8 +145,8 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 
 | Requirement | Status | Notes |
 | --- | --- | --- |
-| UX-01..05, UX-08..10, UX-12..14 | Done | Coherent design system, account identity everywhere, detailed view, visible focus, empty/loading/error states, first-run/empty-state onboarding, dirty guard, cleaner dashboard, account switcher. |
-| UX-06, UX-07, UX-11 | Done | Responsive down to laptop widths, light/dark/system, About/to-dos/changelog. |
+| UX-01..05, UX-08..10, UX-12..14 | Done | Coherent design system, account identity everywhere, detailed view with a collapsed 5-metric summary, Text size setting with live preview, visible focus, empty/loading/error states, first-run/empty-state onboarding, dirty guard, cleaner dashboard, account switcher. |
+| UX-06, UX-07, UX-11 | Done | Responsive down to laptop widths, light/dark/system, Text size scaling, macOS traffic-light spacing, About/to-dos/changelog. |
 | SEC-01, SEC-02 | Next | No secrets are stored in this increment; when sessions land they will use OS keychain/encrypted storage and log redaction. |
 | SEC-03, SEC-04 | Done | Local-only API bind, no telemetry, no inbound listener by default. |
 | SEC-05, SEC-06 | Partial | OS account model; least-privilege file mode work next. |
@@ -171,6 +171,22 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 
 ## Visual evidence
 
+### UI review follow-up (v0.1.1)
+
+- `before-ui-pass-overview.png` / `after-overview.png` — typography before and after, same 1440×940
+  light overview.
+- `before-ui-pass-account.png` / `after-account-detail.png` — all-metrics table versus the collapsed
+  five-metric essentials.
+- `after-settings.png` — Text size control (Compact, Comfortable, Large) and live preview at 112%.
+- `after-overview-large.png`, `after-settings-large.png` — the Large 130% setting; no horizontal
+  overflow at 1200 px.
+- `after-account-metrics-expanded.png` — the expanded all-11-metrics state.
+- `after-macos-desktop.png` — actual Electron renderer on macOS with the sidebar moved below the
+  traffic lights. `capturePage` omits the native controls; measured in the window: 58 px sidebar
+  padding, brand y=58, 46 px drag strip, top bar x=248.
+
+### Original increment
+
 - `before-old-overview.png` — real `creator-center-old` frontend, 1440×940, light, fixture API.
 - `after-overview.png` — new overview, 1440×940, light, demo SQLite workspace.
 - `after-timeline.png` — the same overview scrolled to the 15-day calendar.
@@ -185,14 +201,15 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 
 ## Verification performed
 
-- `npm test` — 40 tests, all passing.
+- `npm test` — 40 tests, all passing (including the font-scale settings round-trip).
 - `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
 - `npm run build` — all four packages build; Vite production bundle produced.
 - API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.
 - Desktop shell: Electron launched the sidecar on an ephemeral port, `/api/health` returned
   `desktop: true`, and the renderer loaded from the built assets.
-- Visual smoke: overview, account drawer, planner, plan dialog, timeline, merge dialog,
-  Community, Settings, About, dark theme at 1440×940.
+- Visual smoke: overview, account drawer collapsed/expanded metrics, planner, plan dialog, timeline,
+  merge dialog, Community, Settings, About, dark theme and Text size preview at 1440×940; Electron
+  DOM check on macOS confirmed the 58 px sidebar offset and 46 px drag strip.
 
 ## Open limitations
 

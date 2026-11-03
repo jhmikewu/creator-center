@@ -185,6 +185,7 @@ export const DEFAULT_SETTINGS: Omit<AppSettings, 'dataDir'> = {
   communityEndpoint: '',
   communityEnabled: true,
   theme: 'system',
+  fontScale: 1.12,
   demoMode: false,
   accountOrder: [],
   mediaInbox: null,

@@ -33,9 +33,10 @@ set is in [docs/screenshots](docs/screenshots).
   numbers to all accounts, one platform or one account.
 - **Cleaner overview.** A KPI band, account cards, a follower dot pool with seven-day gains,
   platform distribution, Community growth and a publishing timeline.
-- **Detailed account view.** Identity, session/analytics/content state, every metric with its
-  scope, availability, period, source and reason, follower history, published and scheduled
-  content, plans targeting the account, and account actions.
+- **Detailed account view.** Identity, session/analytics/content state, a compact metric view
+  (followers, posts, likes, comments, shares) that expands to every metric with its scope,
+  availability, period, source and reason, follower history, published and scheduled content,
+  plans targeting the account, and account actions.
 - **Content planner.** Five content types, default channels and formats, optional date, notes
   hashtags, exam tag aliases, tag catalogue, platform/all-account or specific-account targets,
   publication links, unsaved-change protection and delete confirmation.
@@ -48,7 +49,8 @@ set is in [docs/screenshots](docs/screenshots).
   health, mention/graph/PDF status and 30-day growth history.
 - **Local operations.** SQLite with versioned migrations, a documented data directory, local
   server bound to `127.0.0.1`, background sync, window-state restoration, single-instance lock,
-  English UI, light/dark/system theme, About/to-dos/changelog.
+  English UI, light/dark/system theme, a Text size setting with a live preview, About/to-dos and
+  changelog.
 - **Demo workspace.** Six sample accounts (including two on 抖音), thirty days of history,
   realistic plans, posts, three account-keyed merges, scheduled releases and community snapshots.
   It is clearly marked and removable in Settings.
@@ -148,4 +150,4 @@ legible on a dark surface.
 - [REQUIREMENTS.md](REQUIREMENTS.md) — product requirements, decisions and open questions.
 - [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md) — requirement-by-requirement status,
   architecture and data model.
-- [docs/screenshots](docs/screenshots) — before/after and workflow evidence.
+- [docs/screenshots](docs/screenshots) — before/after, text-size, macOS spacing and workflow evidence.
