@@ -2,6 +2,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { CollectorRequest, CollectorResponse } from '@creator-center/shared';
 import { captureBilibili } from './bilibili.js';
+import { captureXiaohongshu } from './xiaohongshu.js';
 import { captureDouyin } from './douyin.js';
 
 export interface CollectorBridge {
@@ -53,6 +54,8 @@ async function handle(request: http.IncomingMessage, response: http.ServerRespon
     result = await captureDouyin(body.accountId, body.studioUrl ?? null);
   } else if (body.platform === 'bilibili') {
     result = await captureBilibili(body.accountId, body.studioUrl ?? null);
+  } else if (body.platform === 'xiaohongshu') {
+    result = await captureXiaohongshu(body.accountId, body.studioUrl ?? null);
   } else {
     respond(response, 200, {
       ok: false,

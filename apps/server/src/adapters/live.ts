@@ -1,6 +1,7 @@
 import type { Account, BrowserCapture, CollectorResponse, DouyinCapture, Platform } from '@creator-center/shared';
 import { BilibiliLoginRequiredError, parseBilibiliCapture } from '../collectors/bilibili.js';
 import { DouyinLoginRequiredError, parseDouyinCapture } from '../collectors/douyin.js';
+import { XiaohongshuLoginRequiredError, parseXiaohongshuCapture } from '../collectors/xiaohongshu.js';
 import type { AdapterContext, AdapterResult, PlatformAdapter } from './types.js';
 
 /**
@@ -46,9 +47,14 @@ export class LiveCollectorAdapter implements PlatformAdapter {
       if (!body.payload) throw new Error('The desktop collector returned no account data.');
       if (this.platform === 'douyin') return parseDouyinCapture(body.payload as DouyinCapture, context.account);
       if (this.platform === 'bilibili') return parseBilibiliCapture(body.payload as BrowserCapture, context.account);
+      if (this.platform === 'xiaohongshu') return parseXiaohongshuCapture(body.payload as BrowserCapture, context.account);
       throw new Error('This platform has no live parser in this build yet.');
     } catch (error) {
-      if (error instanceof DouyinLoginRequiredError || error instanceof BilibiliLoginRequiredError) {
+      if (
+        error instanceof DouyinLoginRequiredError ||
+        error instanceof BilibiliLoginRequiredError ||
+        error instanceof XiaohongshuLoginRequiredError
+      ) {
         return {
           success: false,
           capturedAt,
@@ -78,6 +84,6 @@ export function liveCollectorFor(account: Account): PlatformAdapter | null {
   const bridgeUrl = process.env.CREATOR_CENTER_COLLECTOR_URL?.trim();
   if (!bridgeUrl || account.isDemo) return null;
   // Only platforms with a real capture and parser get the live adapter.
-  if (account.platform !== 'douyin' && account.platform !== 'bilibili') return null;
+  if (!['douyin', 'bilibili', 'xiaohongshu'].includes(account.platform)) return null;
   return new LiveCollectorAdapter(account.platform, bridgeUrl);
 }

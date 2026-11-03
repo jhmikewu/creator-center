@@ -107,6 +107,11 @@ Bilibili joins 抖音 in the live collector. YouTube is no longer offered in **A
 its OAuth collector is deferred; existing YouTube data is untouched. The Bilibili capture needs
 the owner's signed-in session, so only the Add account entry point is shown.
 
+## Xiaohongshu live collection (v0.1.5)
+
+小红书 joins 抖音 and Bilibili. Its account view uses the existing **Sign in** action; this
+collector adds no new UI, so there is no new before/after capture.
+
 ## Original first increment
 
 | File | What it shows |
