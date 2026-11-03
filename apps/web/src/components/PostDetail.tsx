@@ -3,6 +3,7 @@ import {
   formatDay,
   formatMetric,
   formatTime,
+  postTitle,
 } from '@creator-center/shared';
 import type { Account, MetricKey, Post } from '@creator-center/shared';
 import { safeHref } from '../utils';
@@ -24,7 +25,7 @@ export function PostDetailModal({
     <Modal
       open
       onClose={onClose}
-      title={detail.post.title || 'Untitled post'}
+      title={postTitle(detail.post)}
       eyebrow={`${PLATFORMS[detail.account.platform].label} · ${detail.account.displayName}`}
       width="md"
       footer={

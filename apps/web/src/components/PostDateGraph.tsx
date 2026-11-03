@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CalendarPlus, Layers, Plus } from 'lucide-react';
 import {
@@ -6,6 +6,8 @@ import {
   buildPostDateGraph,
   formatDay,
   mergeTitle,
+  postTitle,
+  stripHashtags,
 } from '@creator-center/shared';
 import type {
   Account,
@@ -40,6 +42,10 @@ interface PostDateGraphProps {
 const DAYS = 30;
 const TOOLTIP_WIDTH = 240;
 
+function displayedMergeTitle(merge: Merge, posts: readonly Post[]): string {
+  return stripHashtags(mergeTitle(merge, posts)) || 'Untitled post';
+}
+
 interface GraphTooltip {
   day: string;
   context: string;
@@ -69,7 +75,39 @@ export function PostDateGraph({
   const [mergeToDelete, setMergeToDelete] = useState<Merge | null>(null);
   const [busy, setBusy] = useState(false);
   const [tooltip, setTooltip] = useState<GraphTooltip | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const autoScrolled = useRef(false);
+  const [scrollEdges, setScrollEdges] = useState({ left: false, right: false });
   const canMerge = posts.length > 1;
+
+  const updateScrollEdges = useCallback(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const left = element.scrollLeft > 1;
+    const right = element.scrollLeft + element.clientWidth < element.scrollWidth - 1;
+    setScrollEdges((current) =>
+      current.left === left && current.right === right ? current : { left, right },
+    );
+  }, []);
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (!element || autoScrolled.current) return;
+    element.scrollLeft = element.scrollWidth;
+    autoScrolled.current = true;
+  }, [graph.end, graph.posts]);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    updateScrollEdges();
+    element.addEventListener('scroll', updateScrollEdges, { passive: true });
+    window.addEventListener('resize', updateScrollEdges);
+    return () => {
+      element.removeEventListener('scroll', updateScrollEdges);
+      window.removeEventListener('resize', updateScrollEdges);
+    };
+  }, [graph.posts, updateScrollEdges]);
 
   useEffect(() => {
     if (!tooltip) return;
@@ -88,7 +126,7 @@ export function PostDateGraph({
     setTooltip({
       day,
       context: `${PLATFORMS[block.account.platform].label} · ${block.account.displayName}`,
-      title: block.merge ? mergeTitle(block.merge, posts) : block.post.title || 'Untitled post',
+      title: block.merge ? displayedMergeTitle(block.merge, posts) : postTitle(block.post),
       merged: block.merge !== null,
       x: Math.min(Math.max(center, TOOLTIP_WIDTH / 2 + 12), window.innerWidth - TOOLTIP_WIDTH / 2 - 12),
       y: rect.top < 160 ? rect.bottom : rect.top,
@@ -124,58 +162,66 @@ export function PostDateGraph({
             message="Collected posts appear here as they arrive."
           />
         ) : (
-          <div className="post-graph-scroll">
-            <div
-              className="post-graph"
-              role="group"
-              aria-label={`Published posts from ${formatDay(graph.start)} to ${formatDay(graph.end)}: ${graph.posts} posts`}
-              style={{ '--post-graph-days': graph.days.length } as React.CSSProperties}
-            >
-              {graph.days.map((day, index) => {
-                const date = new Date(`${day.day}T00:00:00.000Z`);
-                const monthMark =
-                  index === 0 || day.day.endsWith('-01') ? formatDay(day.day, { month: 'short' }) : '';
-                return (
-                  <div
-                    key={day.day}
-                    className={cn('post-graph-day', day.day === today && 'is-today')}
-                  >
-                    <span className="post-graph-month">{monthMark}</span>
-                    <div className="post-graph-stack">
-                      {day.blocks.map((block) => {
-                        const { post, account, merge, mergeShade } = block;
-                        const title = merge ? mergeTitle(merge, posts) : post.title || 'Untitled post';
-                        const label = `${day.day} · ${PLATFORMS[account.platform].label} · ${account.displayName} · ${title}${merge ? ' · merged group' : ''}`;
-                        return (
-                          <button
-                            key={post.id}
-                            type="button"
-                            className={cn(
-                              'post-graph-block',
-                              merge && 'is-merged',
-                              merge !== null && `merge-shade-${mergeShade ?? 0}`,
-                            )}
-                            style={{ '--block-color': PLATFORM_CHART_COLORS[account.platform] } as React.CSSProperties}
-                            aria-label={label}
-                            onMouseEnter={(event) => showTooltip(event.currentTarget, day.day, block)}
-                            onMouseLeave={() => setTooltip(null)}
-                            onFocus={(event) => showTooltip(event.currentTarget, day.day, block)}
-                            onBlur={() => setTooltip(null)}
-                            onClick={() => {
-                              setTooltip(null);
-                              if (merge) setMergeEditor({ merge });
-                              else setPostDetail({ post, account });
-                            }}
-                          />
-                        );
-                      })}
+          <div
+            className={cn(
+              'post-graph-viewport',
+              scrollEdges.left && 'is-scroll-left',
+              scrollEdges.right && 'is-scroll-right',
+            )}
+          >
+            <div className="post-graph-scroll" ref={scrollRef}>
+              <div
+                className="post-graph"
+                role="group"
+                aria-label={`Published posts from ${formatDay(graph.start)} to ${formatDay(graph.end)}: ${graph.posts} posts`}
+                style={{ '--post-graph-days': graph.days.length } as React.CSSProperties}
+              >
+                {graph.days.map((day, index) => {
+                  const date = new Date(`${day.day}T00:00:00.000Z`);
+                  const monthMark =
+                    index === 0 || day.day.endsWith('-01') ? formatDay(day.day, { month: 'short' }) : '';
+                  return (
+                    <div
+                      key={day.day}
+                      className={cn('post-graph-day', day.day === today && 'is-today')}
+                    >
+                      <span className="post-graph-month">{monthMark}</span>
+                      <div className="post-graph-stack">
+                        {day.blocks.map((block) => {
+                          const { post, account, merge, mergeShade } = block;
+                          const title = merge ? displayedMergeTitle(merge, posts) : postTitle(post);
+                          const label = `${day.day} · ${PLATFORMS[account.platform].label} · ${account.displayName} · ${title}${merge ? ' · merged group' : ''}`;
+                          return (
+                            <button
+                              key={post.id}
+                              type="button"
+                              className={cn(
+                                'post-graph-block',
+                                merge && 'is-merged',
+                                merge !== null && `merge-shade-${mergeShade ?? 0}`,
+                              )}
+                              style={{ '--block-color': PLATFORM_CHART_COLORS[account.platform] } as React.CSSProperties}
+                              aria-label={label}
+                              onMouseEnter={(event) => showTooltip(event.currentTarget, day.day, block)}
+                              onMouseLeave={() => setTooltip(null)}
+                              onFocus={(event) => showTooltip(event.currentTarget, day.day, block)}
+                              onBlur={() => setTooltip(null)}
+                              onClick={() => {
+                                setTooltip(null);
+                                if (merge) setMergeEditor({ merge });
+                                else setPostDetail({ post, account });
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                      <span className="post-graph-date">
+                        {String(date.getUTCDate()).padStart(2, '0')}
+                      </span>
                     </div>
-                    <span className="post-graph-date">
-                      {String(date.getUTCDate()).padStart(2, '0')}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}

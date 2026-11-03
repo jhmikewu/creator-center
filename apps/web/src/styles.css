@@ -1951,19 +1951,67 @@ button:disabled {
 }
 
 .post-graph-body {
+  --post-graph-bg: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
   padding: 10px 10px 2px;
   border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
+  background: var(--post-graph-bg);
+}
+
+.post-graph-viewport {
+  position: relative;
+}
+
+.post-graph-viewport::before,
+.post-graph-viewport::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 26px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.post-graph-viewport::before {
+  left: 0;
+  background: linear-gradient(to right, var(--post-graph-bg), transparent);
+}
+
+.post-graph-viewport::after {
+  right: 0;
+  background: linear-gradient(to left, var(--post-graph-bg), transparent);
+}
+
+.post-graph-viewport.is-scroll-left::before,
+.post-graph-viewport.is-scroll-right::after {
+  opacity: 1;
 }
 
 .post-graph-scroll {
   overflow-x: auto;
+  scrollbar-color: var(--faint) transparent;
+  scrollbar-width: thin;
+}
+
+.post-graph-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.post-graph-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.post-graph-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--faint);
 }
 
 .post-graph {
   display: grid;
-  grid-template-columns: repeat(var(--post-graph-days, 30), minmax(20px, 1fr));
-  min-width: 680px;
+  grid-template-columns: repeat(var(--post-graph-days, 30), 42px);
+  width: max-content;
   padding: 4px 2px 0;
 }
 
@@ -2024,8 +2072,8 @@ button:disabled {
   --block-color: var(--accent);
   position: relative;
   flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 0;
   border-radius: 4px;
