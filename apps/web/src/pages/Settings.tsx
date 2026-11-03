@@ -292,30 +292,32 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               label="Old SQLite database"
               hint="Use a copy of the old app database. Browser sessions, YouTube tokens and dashboard passwords are not imported."
             >
-              <TextInput
-                value={migrationPath}
-                onChange={(event) => {
-                  setMigrationPath(event.target.value);
-                  setMigrationPreview(null);
-                  setMigrationResult(null);
-                  setMigrationError('');
-                }}
-                placeholder="~/downloads/fieldnotes-2026-11-03.sqlite3"
-                spellCheck={false}
-              />
+              <div className="migration-source-row">
+                <TextInput
+                  value={migrationPath}
+                  onChange={(event) => {
+                    setMigrationPath(event.target.value);
+                    setMigrationPreview(null);
+                    setMigrationResult(null);
+                    setMigrationError('');
+                  }}
+                  placeholder="~/downloads/fieldnotes-2026-11-03.sqlite3"
+                  spellCheck={false}
+                />
+                {chooseFile && (
+                  <Button variant="secondary" onClick={() => void chooseMigrationFile()} disabled={migrationBusy}>
+                    Choose file
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={() => void previewMigration()}
+                  disabled={migrationBusy || !migrationPath.trim()}
+                >
+                  {migrationBusy ? 'Checking…' : 'Preview'}
+                </Button>
+              </div>
             </Field>
-            {chooseFile && (
-              <Button variant="secondary" onClick={() => void chooseMigrationFile()} disabled={migrationBusy}>
-                Choose file
-              </Button>
-            )}
-            <Button
-              variant="secondary"
-              onClick={() => void previewMigration()}
-              disabled={migrationBusy || !migrationPath.trim()}
-            >
-              {migrationBusy ? 'Checking…' : 'Preview'}
-            </Button>
           </div>
           {migrationError && (
             <p className="settings-error" role="alert"><AlertTriangle size={14} /> {migrationError}</p>
