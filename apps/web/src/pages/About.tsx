@@ -24,6 +24,7 @@ const CHANGELOG = [
       'Added an opt-in importer for the old SQLite workspace: accounts, metrics, history, posts, plans, tags, merges, to-dos and Community history.',
       'Every import previews the source first, requires an empty workspace, creates a timestamped database backup, and preserves media project metadata for the media increment.',
       'Old browser sessions and YouTube tokens are deliberately not imported; accounts reconnect after migration.',
+      'The per-account metric table is now labelled Account metrics, and the import file actions line up with the database field.',
     ],
   },
   {

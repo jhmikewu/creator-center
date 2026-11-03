@@ -228,7 +228,7 @@ export function AccountSheet({
             <section className="detail-section">
               <div className="detail-section-head metric-detail-head">
                 <div>
-                  <h4>Metric detail</h4>
+                  <h4>Account metrics</h4>
                   <span>
                     {showAllMetrics
                       ? 'All 11 metrics · scope, availability, period and source'
