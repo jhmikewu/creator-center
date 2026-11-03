@@ -26,7 +26,7 @@ export class LiveCollectorAdapter implements PlatformAdapter {
           studioUrl: context.account.studioUrl,
           displayName: context.account.displayName,
         }),
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(75_000),
       });
       if (!response.ok) throw new Error(`The desktop collector returned HTTP ${response.status}.`);
       const body = (await response.json()) as CollectorResponse;
@@ -55,12 +55,18 @@ export class LiveCollectorAdapter implements PlatformAdapter {
           detail: error.message,
         };
       }
+      const message = error instanceof Error ? error.message : 'The live collector failed.';
+      const detail = /abort|timeout/i.test(message)
+        ? 'The desktop collector did not respond in time. Restart the app if it stays stuck, then sync again.'
+        : /fetch failed|ECONNREFUSED|connect/i.test(message)
+          ? 'The desktop collector bridge is not reachable. Restart the desktop app and sync again.'
+          : message;
       return {
         success: false,
         capturedAt,
         status: 'error',
         keepPrevious: Boolean(context.account.lastSuccessAt),
-        detail: error instanceof Error ? error.message : 'The live collector failed.',
+        detail,
       };
     }
   }

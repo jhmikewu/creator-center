@@ -1,5 +1,5 @@
 import type { CollectorResponse, DouyinCapture } from '@creator-center/shared';
-import { CollectorPage, accountPartition, hasSessionCookies, wait } from './page.js';
+import { CollectorPage, accountPartition, hasSessionCookies, wait, withTimeout } from './page.js';
 
 const HOME = 'https://creator.douyin.com/creator-micro/home';
 const MANAGE = 'https://creator.douyin.com/creator-micro/content/manage';
@@ -20,6 +20,23 @@ export async function captureDouyin(
   const partition = accountPartition(accountId);
   const page = new CollectorPage(partition);
   try {
+    return await withTimeout(
+      capture(page),
+      60_000,
+      'The 抖音 creator console did not finish loading within the collection limit. Try again; if it repeats, open the account and check the session.',
+    );
+  } catch (error) {
+    return {
+      ok: false,
+      detail: error instanceof Error
+        ? error.message
+        : 'The 抖音 creator console could not be read.',
+    };
+  } finally {
+    page.close();
+  }
+
+  async function capture(page: CollectorPage): Promise<CollectorResponse> {
     if (!(await hasSessionCookies(partition))) {
       return { ok: false, loginRequired: true, detail: 'Sign in to the 抖音 creator console, then sync again.' };
     }
@@ -74,15 +91,6 @@ export async function captureDouyin(
       scheduleRead: schedulePages.length > 0,
     };
     return { ok: true, payload };
-  } catch (error) {
-    return {
-      ok: false,
-      detail: error instanceof Error
-        ? `The 抖音 creator console could not be read: ${error.message}`
-        : 'The 抖音 creator console could not be read.',
-    };
-  } finally {
-    page.close();
   }
 }
 

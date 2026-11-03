@@ -186,6 +186,10 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 - Only 抖音 is ported. A signed-out session reports `login_required`; a failed capture keeps the
   previous reading and marks it stale. The other platforms stay unavailable until their
   collectors land.
+- The first live test exposed a startup deadlock: the CDP network observer was enabled before
+  the hidden page had a renderer. The collector now loads `about:blank` first, bounds every
+  navigation and page script, and caps a capture at 60 seconds; the sidecar aborts at 75. The
+  Sync action waits for completion and refreshes the account.
 
 ## Migration
 

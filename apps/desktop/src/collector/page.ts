@@ -45,16 +45,20 @@ export class CollectorPage {
     await this.attach();
     if (!this.attached) throw new Error('The browser response observer could not start.');
     try {
-      await this.win.loadURL(url);
+      await withTimeout(this.win.loadURL(url), 20_000, 'The creator page did not finish loading.');
     } catch {
-      // A site-side redirect or aborted navigation is handled by the caller.
+      // Continue: the page may still be usable and the expected response can arrive.
     }
     await wait(settleMs);
   }
 
   async text(): Promise<string> {
     try {
-      return (await this.win.webContents.executeJavaScript('document.body ? document.body.innerText : ""', true)) as string;
+      return (await withTimeout(
+        this.win.webContents.executeJavaScript('document.body ? document.body.innerText : ""', true),
+        5_000,
+        'The creator page did not respond.',
+      )) as string;
     } catch {
       return '';
     }
@@ -75,7 +79,11 @@ export class CollectorPage {
       return null;
     })()`;
     try {
-      return (await this.win.webContents.executeJavaScript(script, true)) as string | null;
+      return (await withTimeout(
+        this.win.webContents.executeJavaScript(script, true),
+        5_000,
+        'The creator page did not respond.',
+      )) as string | null;
     } catch {
       return null;
     }
@@ -94,7 +102,11 @@ export class CollectorPage {
       }
     })()`;
     try {
-      await this.win.webContents.executeJavaScript(script, true);
+      await withTimeout(
+        this.win.webContents.executeJavaScript(script, true),
+        5_000,
+        'The creator page did not respond.',
+      );
     } catch {
       // Scrolling is best-effort; the first page is still useful.
     }
@@ -160,10 +172,19 @@ export class CollectorPage {
     };
     debuggerApi.on('message', this.handler);
     try {
-      await debuggerApi.sendCommand('Network.enable');
+      // The Network domain needs a renderer, and a fresh BrowserWindow has none
+      // until its first navigation. Create one before enabling the domain;
+      // enabling it first never resolves.
+      await withTimeout(this.win.loadURL('about:blank'), 5_000, 'The collector page did not start.');
+      await withTimeout(debuggerApi.sendCommand('Network.enable'), 5_000, 'The collector network observer did not start.');
       this.attached = true;
     } catch {
       this.attached = false;
+      try {
+        debuggerApi.detach();
+      } catch {
+        // The window may already be gone.
+      }
     }
   }
 
@@ -184,7 +205,11 @@ export class CollectorPage {
 /** True when this account's partition has any unexpired cookie. */
 export async function hasSessionCookies(partition: string): Promise<boolean> {
   try {
-    const cookies = await session.fromPartition(partition).cookies.get({});
+    const cookies = await withTimeout(
+      session.fromPartition(partition).cookies.get({}),
+      5_000,
+      'The saved session could not be read.',
+    );
     return cookies.some((cookie) => cookie.expirationDate === undefined || cookie.expirationDate * 1000 > Date.now());
   } catch {
     return false;
@@ -197,4 +222,21 @@ export function accountPartition(accountId: string): string {
 
 export function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+    timer.unref?.();
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }

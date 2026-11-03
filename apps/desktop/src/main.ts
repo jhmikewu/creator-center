@@ -224,12 +224,18 @@ ipcMain.handle('creator-center:connect-session', async (_event, payload: {
   }
   return await new Promise<{ ok: boolean; detail?: string }>((resolve) => {
     loginWindow.on('closed', () => {
-      void session.fromPartition(partition).cookies.get({}).then((cookies) => {
+      void Promise.race([
+        session.fromPartition(partition).cookies.get({}),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('The saved session could not be checked.')), 5000)),
+      ]).then((cookies) => {
         const saved = cookies.some(
           (cookie) => cookie.expirationDate === undefined || cookie.expirationDate * 1000 > Date.now(),
         );
         resolve(saved ? { ok: true } : { ok: false, detail: 'The sign-in window closed without a saved session.' });
-      }).catch(() => resolve({ ok: false, detail: 'The saved session could not be checked.' }));
+      }).catch((error) => resolve({
+        ok: false,
+        detail: error instanceof Error ? error.message : 'The saved session could not be checked.',
+      }));
     });
   });
 });

@@ -130,6 +130,7 @@ export function AccountSheet({
       if (result?.ok) {
         notify('Session saved. Syncing…', 'success');
         await syncNow();
+        if (account) setDetail(await loadAccountDetail(account.id));
       } else {
         notify(result?.detail ?? 'The sign-in window closed.', 'info');
       }
