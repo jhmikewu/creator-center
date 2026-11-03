@@ -161,6 +161,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
 
   const accounts = bootstrap?.accounts ?? [];
   const hasDemoAccounts = accounts.some((account) => account.isDemo);
+  const migrationDestinationReady = migrationPreview?.destinationReady ?? accounts.length === 0;
   const chooseFile = (window as unknown as { creatorCenter?: { chooseFile?: () => Promise<string | null> } })
     .creatorCenter?.chooseFile;
   const demoAccounts = accounts.filter((account) => account.isDemo);
@@ -276,14 +277,14 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               <h2>Import the old workspace</h2>
               <p>Bring accounts, metrics, history, plans, merges, to-dos and community history across from the old app.</p>
             </div>
-            <Badge tone={migrationResult || accounts.length === 0 ? 'success' : 'warning'}>
+            <Badge tone={migrationResult || migrationDestinationReady ? 'success' : 'warning'}>
               {migrationResult
                 ? 'Import complete'
-                : accounts.length === 0
+                : migrationDestinationReady
                   ? 'Workspace empty · ready'
                   : hasDemoAccounts
                     ? 'Remove demo before importing'
-                    : 'Workspace already has accounts'}
+                    : 'Workspace not empty'}
             </Badge>
           </div>
           <div className="migration-source">
@@ -349,9 +350,8 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               )}
               {!migrationPreview.destinationReady && (
                 <p className="settings-error">
-                  This workspace already has {migrationPreview.destinationAccounts} account
-                  {migrationPreview.destinationAccounts === 1 ? '' : 's'}. Remove the demo workspace or
-                  existing accounts before importing.
+                  This workspace is not empty. Remove the demo workspace or any existing accounts,
+                  plans, merges and to-dos before importing.
                 </p>
               )}
               {migrationResult && (

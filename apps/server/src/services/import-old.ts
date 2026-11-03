@@ -148,9 +148,15 @@ function inspectOldDatabase(old: Database.Database, db: DB, dataDir: string, sou
     }
   }
   const accounts = listAccounts(db);
-  const destinationReady = accounts.length === 0;
+  const destinationPlanCount = countDestinationTable(db, 'plans');
+  const destinationMergeCount = countDestinationTable(db, 'merges');
+  const destinationTodoCount = countDestinationTable(db, 'todos');
+  const destinationReady =
+    accounts.length === 0 && destinationPlanCount === 0 && destinationMergeCount === 0 && destinationTodoCount === 0;
   if (!destinationReady) {
-    warnings.push('The new workspace already has accounts. Remove them (or the demo workspace) before importing.');
+    warnings.push(
+      'The new workspace is not empty. Remove the demo workspace or any existing accounts, plans, merges and to-dos before importing.',
+    );
   }
   if (path.resolve(sourcePath) === path.resolve(path.join(dataDir, 'creator-center.db'))) {
     throw new MigrationError(400, 'Choose the old workspace database, not the current Creator Center database.');
@@ -186,6 +192,10 @@ function inspectOldDatabase(old: Database.Database, db: DB, dataDir: string, sou
     destinationAccounts: accounts.length,
     warnings,
   };
+}
+
+function countDestinationTable(db: DB, table: 'plans' | 'merges' | 'todos'): number {
+  return (db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() as { count: number }).count;
 }
 
 function tableNames(db: Database.Database): string[] {
