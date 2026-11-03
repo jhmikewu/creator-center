@@ -5,10 +5,11 @@ import type { Post } from './types.js';
  * carry tags such as `#AS物理`). UI copy shows the human title only, so tags
  * are stripped at render time and the stored value stays untouched.
  *
- * The lookbehind keeps real text such as `C#` or `F#` intact when the hash is
- * glued to an ASCII letter.
+ * A tag is stripped wherever it starts, including glued to the previous word
+ * ("manipulation#alevel物理"). A lone hash with no tag body, as in "C# and F#",
+ * is not a tag and stays.
  */
-const HASHTAG = /(?<![A-Za-z])#[\p{L}\p{N}_]+/gu;
+const HASHTAG = /#[\p{L}\p{N}_]+/gu;
 
 export function stripHashtags(value: string): string {
   return value

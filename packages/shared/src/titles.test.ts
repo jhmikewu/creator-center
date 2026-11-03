@@ -9,6 +9,10 @@ describe('title display', () => {
     expect(stripHashtags('题目#AS物理')).toBe('题目');
     expect(stripHashtags('Moment of inertia #AS物理.')).toBe('Moment of inertia.');
     expect(stripHashtags('Physics #AS物理，mechanics')).toBe('Physics，mechanics');
+    expect(stripHashtags('A hard question about equation manipulation#alevel物理')).toBe(
+      'A hard question about equation manipulation',
+    );
+    expect(stripHashtags('equations#alevel物理.')).toBe('equations.');
   });
 
   it('keeps hash characters that are part of real text', () => {
