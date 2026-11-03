@@ -17,13 +17,14 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
-    version: '0.1.3',
+    version: '0.1.4',
     date: '3 November 2026',
-    title: 'Live 抖音 collection',
+    title: 'Live 抖音 and Bilibili collection',
     items: [
       'Added isolated per-account browser sessions with a Sign in action in the account view.',
-      'The first live collector reads the signed-in 抖音 creator console: profile, metrics, published and scheduled posts, and follower history.',
-      'The other browser collectors and YouTube OAuth are the next stage; those accounts stay truthfully setup-required or login-required until then.',
+      'The 抖音 collector reads the signed-in creator console: profile, metrics, published and scheduled posts, and follower history.',
+      'The Bilibili collector reads the signed-in creator console: profile, lifetime totals, followers, published videos, timed releases and video analytics.',
+      'YouTube is disabled while its OAuth collector is deferred; 小红书 and 公众号 are the remaining browser collectors.',
     ],
   },
   {
@@ -67,7 +68,7 @@ const CHANGELOG = [
 
 const NEXT = [
   'Embedded signed-in browser sessions for 抖音, 小红书, 公众号 and Bilibili, isolated per account.',
-  'The four browser collectors and the official YouTube OAuth connection.',
+  'The 小红书 and 公众号 browser collectors; YouTube OAuth is deferred.',
   'Local FFmpeg media pipeline: inbox watching, conversion, chapters, exclusions, two-screen joins and cover sets.',
   'Old-workspace SQLite/media migration and backup/restore.',
   'Installer, signing and auto-update path.',
@@ -97,7 +98,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.3'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.4'}</Badge>
       </header>
 
       <div className="about-grid">

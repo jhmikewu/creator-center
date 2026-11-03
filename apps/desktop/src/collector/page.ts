@@ -18,7 +18,10 @@ export class CollectorPage {
   private handler: ((event: unknown, method: string, params: Record<string, unknown>) => void) | null = null;
   private attached = false;
 
-  constructor(partition: string) {
+  constructor(
+    partition: string,
+    private readonly hosts: RegExp = /^https:\/\/creator\.douyin\.com\//,
+  ) {
     this.win = new BrowserWindow({
       show: false,
       width: 1280,
@@ -76,6 +79,25 @@ export class CollectorPage {
     } catch {
       return null;
     }
+  }
+
+  /** Text from every frame, including cross-origin analytics frames. */
+  async frameTexts(): Promise<{ url: string; text: string }[]> {
+    const frames = this.win.webContents.mainFrame.framesInSubtree;
+    const result: { url: string; text: string }[] = [];
+    for (const frame of frames) {
+      try {
+        const text = await withTimeout(
+          frame.executeJavaScript('document.body ? document.body.innerText : ""', true) as Promise<string>,
+          3_000,
+          'The creator frame did not respond.',
+        );
+        if (typeof text === 'string' && text.trim()) result.push({ url: frame.url, text });
+      } catch {
+        // A frame can disappear while the page navigates.
+      }
+    }
+    return result;
   }
 
   async clickText(...labels: string[]): Promise<string | null> {
@@ -171,7 +193,7 @@ export class CollectorPage {
         const url = response?.url ?? '';
         if (
           response?.status === 200 &&
-          /^https:\/\/creator\.douyin\.com\//.test(url) &&
+          this.hosts.test(url) &&
           /json/i.test(response.mimeType ?? '')
         ) {
           this.pending.set(String(params.requestId), url);

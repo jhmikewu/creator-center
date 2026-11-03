@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { Format, Plan, PlanDraft, Platform } from '@creator-center/shared';
 import {
-  PLATFORM_ORDER,
+  ENABLED_PLATFORMS,
   PLATFORMS,
   formatCompact,
   newPlanDraft,
@@ -284,7 +284,7 @@ function ScopeSwitcher() {
   const [open, setOpen] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const accounts = bootstrap?.accounts ?? [];
-  const platforms = PLATFORM_ORDER.filter((platform) => accounts.some((account) => account.platform === platform));
+  const platforms = ENABLED_PLATFORMS.filter((platform) => accounts.some((account) => account.platform === platform));
 
   useEffect(() => {
     if (!open) return;

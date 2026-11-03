@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Layers } from 'lucide-react';
-import { PLATFORM_ORDER, PLATFORMS, type Platform } from '@creator-center/shared';
+import { ENABLED_PLATFORMS, PLATFORMS, type Platform } from '@creator-center/shared';
 import { useWorkspace } from '../state';
 import { cn } from '../utils';
 import { Button, Field, Modal, PlatformMark, TextInput } from './ui';
@@ -73,7 +73,7 @@ export function AddAccountDialog({ open, onClose }: { open: boolean; onClose: ()
     >
       <div className="add-account">
         <div className="platform-choice" role="radiogroup" aria-label="Platform">
-          {PLATFORM_ORDER.map((key) => {
+          {ENABLED_PLATFORMS.map((key) => {
             const info = PLATFORMS[key];
             return (
               <button

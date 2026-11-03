@@ -1,6 +1,7 @@
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { CollectorRequest, CollectorResponse } from '@creator-center/shared';
+import { captureBilibili } from './bilibili.js';
 import { captureDouyin } from './douyin.js';
 
 export interface CollectorBridge {
@@ -47,14 +48,18 @@ async function handle(request: http.IncomingMessage, response: http.ServerRespon
     respond(response, 400, { ok: false, detail: 'No account selected.' });
     return;
   }
-  if (body.platform !== 'douyin') {
+  let result: CollectorResponse;
+  if (body.platform === 'douyin') {
+    result = await captureDouyin(body.accountId, body.studioUrl ?? null);
+  } else if (body.platform === 'bilibili') {
+    result = await captureBilibili(body.accountId, body.studioUrl ?? null);
+  } else {
     respond(response, 200, {
       ok: false,
       detail: 'This platform has no live collector in this build yet. Sign in is available; collection is not.',
     });
     return;
   }
-  const result: CollectorResponse = await captureDouyin(body.accountId, body.studioUrl ?? null);
   respond(response, 200, result);
 }
 

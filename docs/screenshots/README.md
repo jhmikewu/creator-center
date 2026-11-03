@@ -97,6 +97,16 @@ The account view now offers **Sign in**, which opens the account's persistent is
 The live creator-console capture itself needs the owner's signed-in session, so only the entry
 point is shown; the bridge and the signed-out path were smoke-tested end to end.
 
+## Bilibili and YouTube disable (v0.1.4)
+
+| Before — Add account (main) | After — Add account (this PR) |
+| --- | --- |
+| ![Before YouTube disable](before-youtube-add-account.png) | ![After YouTube disable](after-youtube-add-account.png) |
+
+Bilibili joins 抖音 in the live collector. YouTube is no longer offered in **Add account** while
+its OAuth collector is deferred; existing YouTube data is untouched. The Bilibili capture needs
+the owner's signed-in session, so only the Add account entry point is shown.
+
 ## Original first increment
 
 | File | What it shows |

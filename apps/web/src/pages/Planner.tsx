@@ -14,7 +14,7 @@ import {
   CONTENT_TYPE_MAP,
   EXAM_TAG_CHOICES,
   PLATFORMS,
-  PLATFORM_ORDER,
+  ENABLED_PLATFORMS,
   dayDistance,
   formatDay,
   planStatus,
@@ -172,7 +172,7 @@ export function PlannerPage({
                 onChange={(event) => setPlatformFilter(event.target.value as Platform | 'all')}
               >
                 <option value="all">All platforms</option>
-                {PLATFORM_ORDER.map((platform) => (
+                {ENABLED_PLATFORMS.map((platform) => (
                   <option key={platform} value={platform}>{PLATFORMS[platform].label}</option>
                 ))}
               </Select>

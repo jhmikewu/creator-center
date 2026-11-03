@@ -404,9 +404,27 @@ export interface CollectorRequest {
 }
 
 /** Response from the desktop collector bridge. */
+export interface CapturedResponse {
+  url: string;
+  body: unknown;
+}
+
+/** Raw pages and JSON responses from one signed-in browser walk. */
+export interface BrowserCapture {
+  capturedAt: string;
+  loginRequired?: boolean;
+  responses: CapturedResponse[];
+  texts: {
+    home?: string;
+    fans?: string;
+    manager?: string;
+    analytics?: string;
+  };
+}
+
 export interface CollectorResponse {
   ok: boolean;
   loginRequired?: boolean;
   detail?: string;
-  payload?: DouyinCapture;
+  payload?: DouyinCapture | BrowserCapture;
 }
