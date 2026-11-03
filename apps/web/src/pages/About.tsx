@@ -17,6 +17,16 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.9',
+    date: '3 November 2026',
+    title: 'Publishing graph order and hover card',
+    items: [
+      'Merged posts stack together in the graph, bottom to top in the order 小红书, 抖音, Bilibili and 公众号; unmerged posts stack above them. YouTube extends the order at the top.',
+      'The hover card separates the date (YYYY-MM-DD), platform and account, title and merge state instead of showing one native tooltip line.',
+      'Removed the merged-group legend; the graph footer lists platforms only.',
+    ],
+  },
+  {
     version: '0.1.8',
     date: '3 November 2026',
     title: 'Overview totals and group shading',
@@ -135,7 +145,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.8'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.9'}</Badge>
       </header>
 
       <div className="about-grid">

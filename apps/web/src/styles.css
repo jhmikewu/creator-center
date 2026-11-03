@@ -2000,9 +2000,9 @@ button:disabled {
 .post-graph-stack {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 3px;
   width: 100%;
   padding: 5px 0 6px;
@@ -2047,8 +2047,7 @@ button:disabled {
 
 /* Merged groups rotate through six distinct overlays, so two groups that
    happen to sit side by side are not read as one. */
-.post-graph-block.is-merged::after,
-.post-graph-swatch.is-merged::after {
+.post-graph-block.is-merged::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -2139,17 +2138,67 @@ button:disabled {
   overflow: hidden;
 }
 
-.post-graph-merge-swatches {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.post-graph-merge-swatches .post-graph-swatch {
-  background: var(--ink-soft);
-}
-
 .post-graph-count {
   white-space: nowrap;
+}
+
+.post-tooltip {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 240px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-lift);
+  color: var(--ink);
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 8px));
+  animation: tooltip-in 0.12s ease both;
+}
+
+.post-tooltip.is-below {
+  transform: translate(-50%, 8px);
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.post-tooltip-date {
+  font-family: var(--font-mono);
+  font-size: calc(9.5px * var(--font-scale));
+  letter-spacing: 0.02em;
+  color: var(--faint);
+}
+
+.post-tooltip-context {
+  font-size: calc(10px * var(--font-scale));
+  color: var(--muted);
+}
+
+.post-tooltip-title {
+  overflow-wrap: anywhere;
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.post-tooltip-detail {
+  align-self: flex-start;
+  margin-top: 1px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: calc(8.5px * var(--font-scale));
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 /* -------------------------------------------------------------------------- */

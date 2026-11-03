@@ -151,6 +151,22 @@ action and adds no new UI, so there is no new before/after capture.
   close-ups of the totals section; [after-merge-shading-dark.png](after-merge-shading-dark.png) is the
   graph in the dark theme.
 
+## Publishing stack order and hover card (v0.1.9)
+
+| Before — main at `ec2e6ae` | After — this PR |
+| --- | --- |
+| ![Before stack order](before-post-stack.png) | ![After stack order](after-post-stack.png) |
+| ![Before native tooltip (owner capture)](before-post-tooltip.png) | ![After hover card](after-post-tooltip.png) |
+
+- The stack pair uses the 1440 × 940 viewport, light theme and demo workspace. The hover pair uses
+  the owner's capture of the previous native tooltip and a demo capture of the new hover card, so
+  the post content differs between the two.
+- Merged posts now stack together at the bottom of a day: group by group, then 小红书, 抖音,
+  Bilibili, 公众号 and YouTube; unmerged posts stack above them. The merged-group legend is gone.
+- The hover card shows the date (`YYYY-MM-DD`), platform · account, title and a `Merged group`
+  badge instead of one wrapped native tooltip line.
+- [after-post-tooltip-long.png](after-post-tooltip-long.png) — a long title without the merge badge.
+
 ## Original first increment
 
 | File | What it shows |

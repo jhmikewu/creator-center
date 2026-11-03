@@ -41,6 +41,7 @@ function makeAccount(id: string, platform: Account['platform'], displayName: str
 const douyin = makeAccount('dy-main', 'douyin', 'Liam Physics');
 const xhs = makeAccount('xhs', 'xiaohongshu', 'Liam Notes');
 const bili = makeAccount('bili', 'bilibili', 'Liam Bilibili');
+const yt = makeAccount('yt', 'youtube', 'Liam YouTube');
 
 function makePost(
   id: string,
@@ -163,6 +164,30 @@ describe('post date graph', () => {
 });
 
 describe('post calendar', () => {
+  it('keeps merged groups together and orders platforms bottom-to-top', () => {
+    const dyOne = makePost('dy-one', douyin, '2026-10-20', 'published', 9);
+    const xhsOne = makePost('xhs-one', xhs, '2026-10-20', 'published', 10);
+    const biliOne = makePost('bili-one', bili, '2026-10-20', 'published', 11);
+    const ytOne = makePost('yt-one', yt, '2026-10-20', 'published', 12);
+    const dyTwo = makePost('dy-two', douyin, '2026-10-20', 'published', 13);
+    const loose = makePost('loose', douyin, '2026-10-20', 'published', 14);
+    const graph = buildPostDateGraph({
+      accounts: [douyin, xhs, bili, yt],
+      posts: [dyOne, xhsOne, biliOne, ytOne, dyTwo, loose],
+      merges: [makeMerge('merge-a', [dyOne, xhsOne]), makeMerge('merge-b', [biliOne, ytOne])],
+      today,
+    });
+    const day = graph.days.find((entry) => entry.day === '2026-10-20');
+    expect(day?.blocks.map((block) => block.post.id)).toEqual([
+      'xhs-one',
+      'dy-one',
+      'bili-one',
+      'yt-one',
+      'dy-two',
+      'loose',
+    ]);
+  });
+
   it('starts on a Monday and ends with the current week', () => {
     const calendar = buildPostCalendar({ posts: [], today, weeks: 13 });
     expect(weekStart(today)).toBe('2026-11-02');

@@ -32,8 +32,8 @@ set is in [docs/screenshots](docs/screenshots).
 - **One account, one ID.** Multiple accounts on the same platform coexist with separate metrics,
   posts and history. The overview labels every account, and the scope switcher filters all
   numbers to all accounts, one platform or one account.
-- **Cleaner overview.** A compact totals card, the posting graph, account cards, a follower dot pool with seven-day gains,
-  platform distribution, Community growth and a 30-day posting graph above the account cards.
+- **Cleaner overview.** A compact totals card above the 30-day posting graph, then account cards, a
+  follower dot pool with seven-day gains, platform distribution and Community growth.
 - **Detailed account view.** Identity, session/analytics/content state, a compact metric view
   (followers, posts, likes, comments, shares) that expands to every metric with its scope,
   availability, period, source and reason, follower history, a GitHub-style posting calendar,
@@ -42,8 +42,10 @@ set is in [docs/screenshots](docs/screenshots).
   hashtags, exam tag aliases, tag catalogue, platform/all-account or specific-account targets,
   publication links, unsaved-change protection and delete confirmation.
 - **Posting graph.** Thirty days of published posts in Asia/Shanghai as square blocks stacked
-  per day, platform colours, a different shade for each merged group (six patterns rotating) and
-  click-through to the post or its merge. The account drawer adds a GitHub-style posting calendar.
+  per day, platform colours, a different shade for each merged group, merged groups stacked
+  together in platform order, and a multi-line hover card with the date, platform/account, title
+  and merge state. Click-through opens the post or its merge. The account drawer adds a
+  GitHub-style posting calendar.
 - **Community monitor.** A configurable Discourse status endpoint, cached last-good snapshot,
   connectivity/authentication/latency, all-time/24-hour/7-day catalogue counts, worker and timer
   health, mention/graph/PDF status and 30-day growth history.
@@ -140,7 +142,7 @@ stale or error truthfully. YouTube is disabled while its OAuth collector is defe
 ## Tests and checks
 
 ```sh
-npm test          # 76 domain/API/database tests
+npm test          # 77 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```

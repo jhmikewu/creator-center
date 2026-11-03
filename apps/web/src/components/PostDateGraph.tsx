@@ -1,13 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CalendarPlus, Layers, Plus } from 'lucide-react';
 import {
-  MERGE_SHADE_COUNT,
   PLATFORMS,
   buildPostDateGraph,
   formatDay,
   mergeTitle,
 } from '@creator-center/shared';
-import type { Account, Format, Merge, Plan, Platform, Post } from '@creator-center/shared';
+import type {
+  Account,
+  Format,
+  Merge,
+  Plan,
+  Platform,
+  Post,
+  PostDateBlock,
+} from '@creator-center/shared';
 import { useWorkspace } from '../state';
 import { cn, PLATFORM_CHART_COLORS } from '../utils';
 import { PostDetailModal } from './PostDetail';
@@ -30,6 +38,17 @@ interface PostDateGraphProps {
 }
 
 const DAYS = 30;
+const TOOLTIP_WIDTH = 240;
+
+interface GraphTooltip {
+  day: string;
+  context: string;
+  title: string;
+  merged: boolean;
+  x: number;
+  y: number;
+  below: boolean;
+}
 
 export function PostDateGraph({
   plans,
@@ -49,7 +68,33 @@ export function PostDateGraph({
   const [mergeEditor, setMergeEditor] = useState<{ merge: Merge | null } | null>(null);
   const [mergeToDelete, setMergeToDelete] = useState<Merge | null>(null);
   const [busy, setBusy] = useState(false);
+  const [tooltip, setTooltip] = useState<GraphTooltip | null>(null);
   const canMerge = posts.length > 1;
+
+  useEffect(() => {
+    if (!tooltip) return;
+    const hide = () => setTooltip(null);
+    window.addEventListener('scroll', hide, true);
+    window.addEventListener('resize', hide);
+    return () => {
+      window.removeEventListener('scroll', hide, true);
+      window.removeEventListener('resize', hide);
+    };
+  }, [tooltip]);
+
+  function showTooltip(element: HTMLElement, day: string, block: PostDateBlock) {
+    const rect = element.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    setTooltip({
+      day,
+      context: `${PLATFORMS[block.account.platform].label} · ${block.account.displayName}`,
+      title: block.merge ? mergeTitle(block.merge, posts) : block.post.title || 'Untitled post',
+      merged: block.merge !== null,
+      x: Math.min(Math.max(center, TOOLTIP_WIDTH / 2 + 12), window.innerWidth - TOOLTIP_WIDTH / 2 - 12),
+      y: rect.top < 160 ? rect.bottom : rect.top,
+      below: rect.top < 160,
+    });
+  }
 
   return (
     <section className="panel post-graph-panel" aria-labelledby="post-graph-heading">
@@ -97,9 +142,10 @@ export function PostDateGraph({
                   >
                     <span className="post-graph-month">{monthMark}</span>
                     <div className="post-graph-stack">
-                      {day.blocks.map(({ post, account, merge, mergeShade }) => {
+                      {day.blocks.map((block) => {
+                        const { post, account, merge, mergeShade } = block;
                         const title = merge ? mergeTitle(merge, posts) : post.title || 'Untitled post';
-                        const label = `${formatDay(day.day, { weekday: 'short', month: 'short', day: 'numeric' })} · ${PLATFORMS[account.platform].label} · ${account.displayName} · ${title}${merge ? ' · merged group' : ''}`;
+                        const label = `${day.day} · ${PLATFORMS[account.platform].label} · ${account.displayName} · ${title}${merge ? ' · merged group' : ''}`;
                         return (
                           <button
                             key={post.id}
@@ -111,12 +157,15 @@ export function PostDateGraph({
                             )}
                             style={{ '--block-color': PLATFORM_CHART_COLORS[account.platform] } as React.CSSProperties}
                             aria-label={label}
-                            title={label}
-                            onClick={() =>
-                              merge
-                                ? setMergeEditor({ merge })
-                                : setPostDetail({ post, account })
-                            }
+                            onMouseEnter={(event) => showTooltip(event.currentTarget, day.day, block)}
+                            onMouseLeave={() => setTooltip(null)}
+                            onFocus={(event) => showTooltip(event.currentTarget, day.day, block)}
+                            onBlur={() => setTooltip(null)}
+                            onClick={() => {
+                              setTooltip(null);
+                              if (merge) setMergeEditor({ merge });
+                              else setPostDetail({ post, account });
+                            }}
                           />
                         );
                       })}
@@ -140,24 +189,26 @@ export function PostDateGraph({
               {PLATFORMS[platform].label}
             </span>
           ))}
-          {graph.mergedGroups > 0 && (
-            <span className="post-graph-legend-item" title="Each merged group uses a different shade">
-              <span className="post-graph-merge-swatches" aria-hidden="true">
-                {Array.from({ length: MERGE_SHADE_COUNT }, (_, index) => (
-                  <span
-                    key={index}
-                    className={cn('post-graph-swatch', 'is-merged', `merge-shade-${index}`)}
-                  />
-                ))}
-              </span>
-              Merged groups
-            </span>
-          )}
         </div>
         <span className="post-graph-count">
           {graph.posts} post{graph.posts === 1 ? '' : 's'} · {DAYS} days
         </span>
       </footer>
+
+      {tooltip &&
+        createPortal(
+          <div
+            className={cn('post-tooltip', tooltip.below && 'is-below')}
+            role="tooltip"
+            style={{ left: tooltip.x, top: tooltip.y }}
+          >
+            <span className="post-tooltip-date">{tooltip.day}</span>
+            <span className="post-tooltip-context">{tooltip.context}</span>
+            <strong className="post-tooltip-title">{tooltip.title}</strong>
+            {tooltip.merged && <span className="post-tooltip-detail">Merged group</span>}
+          </div>,
+          document.body,
+        )}
 
       <PostDetailModal
         detail={postDetail}
