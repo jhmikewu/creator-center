@@ -1,0 +1,21 @@
+{
+  "name": "@creator-center/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/main.js",
+  "description": "Creator Center desktop shell",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node --input-type=commonjs -e \"require('fs').copyFileSync('src/preload.cjs','dist/preload.cjs')\"",
+    "start": "node scripts/launch.cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@creator-center/server": "0.1.0",
+    "@creator-center/shared": "0.1.0"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "typescript": "~5.7.2"
+  }
+}
