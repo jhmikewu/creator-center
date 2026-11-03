@@ -66,7 +66,7 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | Requirement | Status | Notes |
 | --- | --- | --- |
 | ACC-01, ACC-02 | Done | Add accounts on four enabled platforms; multiple accounts per platform; stable account IDs. YouTube is disabled in this build. |
-| ACC-03, ACC-04, ACC-09, ACC-10 | Partial | Embedded isolated sessions and the 抖音 and Bilibili live collectors are in. YouTube is disabled while its OAuth collector is deferred; 小红书/公众号 and connection management remain. |
+| ACC-03, ACC-04, ACC-09, ACC-10 | Partial | Embedded isolated sessions and the 抖音, Bilibili and 小红书 live collectors are in. YouTube is disabled while its OAuth collector is deferred; 公众号 and connection management remain. |
 | ACC-05 | Done | Per-account status, analytics/content state, last attempt/success and re-auth action. |
 | ACC-06 | Partial | Six-hour/manual sync coordinator, overlap guard, progress and results; real adapters next. |
 | ACC-07 | Done | A failed refresh keeps the previous reading and marks it stale. |
@@ -179,17 +179,19 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 - The desktop starts a loopback-only collector bridge and passes its URL to the sidecar as
   `CREATOR_CENTER_COLLECTOR_URL`. The sidecar posts the account to `/collect` and receives only
   the mapped capture, never cookies.
-- `apps/server/src/adapters/live.ts` uses the bridge for 抖音 and Bilibili;
+- `apps/server/src/adapters/live.ts` uses the bridge for 抖音, Bilibili and 小红书;
   `apps/server/src/collectors/douyin.ts` parses the profile, published and timed work lists and
   the overview; `bilibili.ts` parses the nav, lifetime index, fans, archive pages, timed
-  releases and the video analytics. `npm test` covers both parsers and the bridge adapter.
+  releases and the video analytics; `xiaohongshu.ts` parses the profile, seven-day note
+  analytics, notes and timed releases. `npm test` covers all three parsers and the bridge
+  adapter.
 - The Bilibili collector walks the signed-in member home, fans, content manager and data-up
   pages; `apps/server/src/collectors/bilibili.ts` reads the nav, lifetime index, fans, archive
   pages, timed releases and the displayed video analytics. Its live walk needs the owner's
   signed-in session; the parser is covered by tests.
-- 抖音 and Bilibili are ported. A signed-out session reports `login_required`; a failed capture
-  keeps the previous reading and marks it stale. 小红书 and 公众号 stay unavailable until their
-  collectors land; YouTube is disabled while its OAuth collector is deferred.
+- 抖音, Bilibili and 小红书 are ported. A signed-out session reports `login_required`; a failed
+  capture keeps the previous reading and marks it stale. 公众号 stays unavailable until its
+  collector lands; YouTube is disabled while its OAuth collector is deferred.
 - The first live test exposed a startup deadlock: the CDP network observer was enabled before
   the hidden page had a renderer. The collector now loads `about:blank` first, bounds every
   navigation and page script, and caps a capture at 60 seconds; the sidecar aborts at 75. The

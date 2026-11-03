@@ -17,6 +17,15 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.5',
+    date: '3 November 2026',
+    title: 'Live Xiaohongshu collection',
+    items: [
+      'The 小红书 collector reads the signed-in creator console: profile, followers, seven-day note analytics, published notes and timed releases.',
+      '公众号 is the remaining browser collector; YouTube OAuth is deferred.',
+    ],
+  },
+  {
     version: '0.1.4',
     date: '3 November 2026',
     title: 'Live 抖音 and Bilibili collection',
@@ -68,7 +77,7 @@ const CHANGELOG = [
 
 const NEXT = [
   'Embedded signed-in browser sessions for 抖音, 小红书, 公众号 and Bilibili, isolated per account.',
-  'The 小红书 and 公众号 browser collectors; YouTube OAuth is deferred.',
+  'The 公众号 browser collector; YouTube OAuth is deferred.',
   'Local FFmpeg media pipeline: inbox watching, conversion, chapters, exclusions, two-screen joins and cover sets.',
   'Old-workspace SQLite/media migration and backup/restore.',
   'Installer, signing and auto-update path.',
@@ -98,7 +107,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.4'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.5'}</Badge>
       </header>
 
       <div className="about-grid">
