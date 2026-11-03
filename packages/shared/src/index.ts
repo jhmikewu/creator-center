@@ -5,4 +5,4 @@ export * from './metrics.js';
 export * from './tags.js';
 export * from './planning.js';
 export * from './merges.js';
-export * from './timeline.js';
+export * from './activity.js';

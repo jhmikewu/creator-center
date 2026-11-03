@@ -59,6 +59,7 @@
   --chart-bilibili: #0099cc;
   --chart-youtube: #e5484d;
   --overlay: rgba(12, 20, 16, 0.46);
+  --graph-hatch: rgba(255, 255, 255, 0.58);
 }
 
 :root[data-theme="dark"] {
@@ -98,6 +99,7 @@
   --chart-bilibili: #4ec7f3;
   --chart-youtube: #ff7b80;
   --overlay: rgba(0, 0, 0, 0.62);
+  --graph-hatch: rgba(8, 16, 13, 0.52);
 }
 
 *,
@@ -1924,34 +1926,28 @@ button:disabled {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Timeline                                                                   */
+/* Post date graph                                                            */
 /* -------------------------------------------------------------------------- */
 
-.timeline-panel {
+.post-graph-panel {
   padding: 0;
   overflow: hidden;
 }
 
-.timeline-header {
+.post-graph-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 22px;
-  padding: 20px 22px 16px;
+  padding: 20px 22px 14px;
 }
 
-.timeline-header h2 {
+.post-graph-header h2 {
   margin-top: 3px;
   font-size: calc(26px * var(--font-scale));
 }
 
-.timeline-header p {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: calc(12px * var(--font-scale));
-}
-
-.timeline-actions {
+.post-graph-actions {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1959,403 +1955,166 @@ button:disabled {
   justify-content: flex-end;
 }
 
-.timeline-window {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface-2);
-}
-
-.window-label {
-  padding: 5px 7px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: calc(11px * var(--font-scale));
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.window-label:hover {
-  background: var(--surface);
-}
-
-.timeline-calendar-wrap {
-  overflow-x: auto;
+.post-graph-body {
+  padding: 10px 10px 2px;
   border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
 }
 
-.timeline-calendar {
-  min-width: 780px;
+.post-graph-scroll {
+  overflow-x: auto;
 }
 
-.timeline-calendar-head,
-.timeline-day {
+.post-graph {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: repeat(var(--post-graph-days, 30), minmax(20px, 1fr));
+  min-width: 680px;
+  padding: 4px 2px 0;
 }
 
-.timeline-calendar-head {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--line);
-}
-
-.timeline-date-head,
-.timeline-lane-head {
-  padding: 8px 14px;
-  font-size: calc(9px * var(--font-scale));
-  font-weight: 700;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-
-.timeline-lane-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-left: 1px solid var(--line);
-}
-
-.lane-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.lane-video { background: var(--accent); }
-.lane-print { background: var(--gold); }
-
-.timeline-day {
-  min-height: 62px;
-  border-bottom: 1px solid var(--line);
-}
-
-.timeline-day:last-child {
-  border-bottom: 0;
-}
-
-.timeline-day.is-today {
-  background: var(--grid-tint);
-}
-
-.timeline-date {
+.post-graph-day {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0;
-  padding: 11px 14px;
-  border-right: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface-2) 55%, transparent);
-}
-
-.date-weekday {
-  font-size: calc(9px * var(--font-scale));
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-
-.date-number {
-  font-family: var(--font-display);
-  font-size: calc(23px * var(--font-scale));
-  font-weight: 500;
-  line-height: 1.05;
-}
-
-.date-month {
-  font-size: calc(9.5px * var(--font-scale));
-  color: var(--muted);
-}
-
-.today-chip {
-  margin-top: 4px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-size: calc(8px * var(--font-scale));
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-:root[data-theme="dark"] .today-chip {
-  color: #06231e;
-}
-
-.timeline-lane {
-  position: relative;
-  padding: 6px 8px 6px 10px;
-  border-left: 1px solid var(--line);
+  align-items: center;
   min-width: 0;
+  padding: 0 2px 2px;
+  border-radius: 7px;
   transition: background 0.14s ease;
 }
 
-.timeline-lane.is-drop-target {
-  background: var(--accent-soft);
-  outline: 1px dashed var(--accent);
-  outline-offset: -4px;
+.post-graph-day:hover {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 
-.lane-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.post-graph-day.is-today {
+  background: var(--grid-tint);
 }
 
-.lane-add {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  margin-left: auto;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--faint);
-  opacity: 0;
-  transition: opacity 0.15s ease, background 0.15s ease;
-}
-
-.timeline-lane:hover .lane-add,
-.lane-add:focus-visible {
-  opacity: 1;
-}
-
-.lane-add:hover {
-  background: var(--surface-2);
-  color: var(--accent);
-}
-
-.timeline-card {
-  --card-color: var(--accent);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 7px 9px 7px 11px;
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--card-color);
-  border-radius: 8px;
-  background: var(--surface-3);
-  box-shadow: 0 1px 1px rgba(24, 34, 29, 0.03);
-  cursor: pointer;
-  transition: border-color 0.14s ease, transform 0.12s ease, box-shadow 0.14s ease;
-}
-
-.timeline-card:hover {
-  border-color: color-mix(in srgb, var(--card-color) 45%, var(--line));
-  box-shadow: 0 4px 12px -6px rgba(24, 34, 29, 0.25);
-}
-
-.timeline-card:focus-visible {
-  box-shadow: var(--focus);
-}
-
-.timeline-card.is-pinned {
-  background: color-mix(in srgb, var(--accent-soft) 35%, var(--surface-3));
-}
-
-.timeline-card.is-scheduled {
-  border-style: dashed;
-  border-left-style: solid;
-  background: color-mix(in srgb, var(--info-soft) 50%, var(--surface-3));
-}
-
-.plan-card { --card-color: var(--accent); }
-.post-card { --card-color: var(--info); }
-.merge-card { --card-color: var(--merge-color, var(--gold)); }
-
-.card-top {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  font-size: calc(9px * var(--font-scale));
-  color: var(--faint);
-}
-
-.card-kind {
+.post-graph-month {
+  width: 100%;
+  height: 13px;
+  padding-left: 1px;
+  overflow: visible;
   font-size: calc(8.5px * var(--font-scale));
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--card-color);
-  white-space: nowrap;
-}
-
-.card-account {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink-soft);
-  font-size: calc(9.5px * var(--font-scale));
-  font-weight: 600;
-}
-
-.card-top .badge {
-  margin-left: auto;
-  font-size: calc(8px * var(--font-scale));
-  padding: 1px 5px;
-}
-
-.post-time,
-.merge-date {
-  margin-left: auto;
-  font-size: calc(8.5px * var(--font-scale));
+  letter-spacing: 0.04em;
   color: var(--faint);
   white-space: nowrap;
 }
 
-.drag-grip {
-  color: var(--faint);
-  opacity: 0.6;
-}
-
-.card-title {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: calc(11.5px * var(--font-scale));
-  font-weight: 650;
-  line-height: 1.3;
-}
-
-.card-targets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.target-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  max-width: 100%;
-  padding: 1px 4px 1px 2px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  font-size: calc(8.5px * var(--font-scale));
-  color: var(--muted);
-}
-
-.target-chip span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 92px;
-}
-
-.target-chip .platform-mark {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  font-size: calc(6px * var(--font-scale));
-}
-
-.target-chip .platform-mark svg {
-  width: 8px;
-  height: 8px;
-}
-
-.card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  font-size: calc(8.5px * var(--font-scale));
-  color: var(--faint);
-}
-
-.merge-members {
+.post-graph-stack {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  margin-top: 1px;
-}
-
-.merge-member {
-  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: calc(8.5px * var(--font-scale));
-  color: var(--muted);
+  justify-content: flex-end;
+  gap: 3px;
+  width: 100%;
+  padding: 5px 0 6px;
 }
 
-.merge-account {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 90px;
-}
-
-.merge-stat {
-  margin-left: auto;
+.post-graph-date {
+  height: 12px;
+  font-family: var(--font-mono);
+  font-size: calc(7.5px * var(--font-scale));
   color: var(--faint);
-  white-space: nowrap;
 }
 
-.timeline-ideas {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  padding: 13px 18px;
-  border-top: 1px solid var(--line);
-  background: var(--surface-2);
+.post-graph-day.is-today .post-graph-date {
+  color: var(--accent);
+  font-weight: 700;
 }
 
-.ideas-heading {
+.post-graph-block {
+  --block-color: var(--accent);
+  position: relative;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--block-color);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.16);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.post-graph-block:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 7px -2px rgba(0, 0, 0, 0.36);
+}
+
+.post-graph-block:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Horizontal stripes would read as extra block boundaries in a vertical
+   stack, so merged groups use the diagonal hatch instead. */
+.post-graph-block.is-merged::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--graph-hatch) 0 2px,
+    transparent 2px 5px
+  );
+  pointer-events: none;
+}
+
+.post-graph-panel .empty-state {
+  margin: 18px;
+}
+
+.post-graph-foot {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding-top: 4px;
-  font-size: calc(10.5px * var(--font-scale));
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.ideas-heading strong {
-  color: var(--ink-soft);
-}
-
-.ideas-list {
-  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
-  gap: 6px;
+  padding: 9px 22px 11px;
+  border-top: 1px solid var(--line);
+  font-size: calc(9.5px * var(--font-scale));
+  color: var(--faint);
 }
 
-.idea-chip {
+.post-graph-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.post-graph-legend-item {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink-soft);
-  font-size: calc(10.5px * var(--font-scale));
 }
 
-.idea-chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.post-graph-swatch {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  border-radius: 2.5px;
+  overflow: hidden;
 }
 
-.idea-chip.is-static {
-  color: var(--faint);
+.post-graph-swatch.is-merged::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--graph-hatch) 0 1.5px,
+    transparent 1.5px 4px
+  );
 }
 
-.timeline-panel .empty-state {
-  margin: 18px;
+.post-graph-count {
+  white-space: nowrap;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -3020,6 +2779,123 @@ button:disabled {
 .account-hero-followers small {
   font-size: calc(10px * var(--font-scale));
   color: var(--muted);
+}
+
+.account-hero-calendar {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0 2px 0 auto;
+  padding: 2px 0;
+}
+
+/* A GitHub-style posting calendar: week columns starting Monday. */
+.post-calendar {
+  --calendar-color: var(--accent);
+  --calendar-cell: 14px;
+  --calendar-gap: 3px;
+  --calendar-weekday-width: 28px;
+  width: fit-content;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--faint);
+  font-size: calc(8.5px * var(--font-scale));
+}
+
+.post-calendar-months {
+  display: flex;
+  gap: var(--calendar-gap);
+  padding-left: calc(var(--calendar-weekday-width) + 4px);
+}
+
+.post-calendar-month {
+  flex: 0 0 var(--calendar-cell);
+  width: var(--calendar-cell);
+  overflow: visible;
+  font-size: calc(7.5px * var(--font-scale));
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.post-calendar-body {
+  display: flex;
+  gap: 4px;
+}
+
+.post-calendar-weekdays {
+  display: flex;
+  flex: 0 0 var(--calendar-weekday-width);
+  flex-direction: column;
+  gap: var(--calendar-gap);
+  width: var(--calendar-weekday-width);
+}
+
+.post-calendar-weekdays span {
+  height: var(--calendar-cell);
+  font-size: calc(7.5px * var(--font-scale));
+  line-height: var(--calendar-cell);
+  text-align: right;
+}
+
+.post-calendar-weeks {
+  display: flex;
+  gap: var(--calendar-gap);
+}
+
+.post-calendar-week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--calendar-gap);
+}
+
+.post-calendar-cell {
+  flex: 0 0 auto;
+  width: var(--calendar-cell);
+  height: var(--calendar-cell);
+  border-radius: 2.5px;
+  background: var(--line);
+}
+
+.post-calendar-cell.is-level-1 {
+  background: color-mix(in srgb, var(--calendar-color) 46%, transparent);
+}
+
+.post-calendar-cell.is-level-2 {
+  background: color-mix(in srgb, var(--calendar-color) 72%, transparent);
+}
+
+.post-calendar-cell.is-level-3 {
+  background: var(--calendar-color);
+}
+
+.post-calendar-cell.is-future {
+  opacity: 0.36;
+}
+
+.post-calendar-cell:hover {
+  outline: 1px solid var(--line-strong);
+  outline-offset: 1px;
+}
+
+.post-calendar-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: calc(8px * var(--font-scale));
+}
+
+.post-calendar-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.post-calendar-legend .post-calendar-cell {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 
 .detail-section {
@@ -5459,16 +5335,21 @@ button:disabled {
   .account-grid {
     gap: 10px;
   }
-  .timeline-header {
+  .post-graph-header {
     flex-direction: column;
     align-items: flex-start;
   }
-  .timeline-actions {
+  .post-graph-actions {
     justify-content: flex-start;
   }
-  .timeline-ideas {
-    flex-direction: column;
-    gap: 8px;
+  .account-hero-calendar {
+    order: 2;
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 0;
+  }
+  .account-hero-followers {
+    order: 3;
   }
   .planner-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));

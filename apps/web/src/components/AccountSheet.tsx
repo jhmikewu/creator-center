@@ -46,6 +46,7 @@ import {
   TextInput,
 } from './ui';
 import { TrendChart } from './charts';
+import { PostCalendar } from './PostCalendar';
 
 interface DesktopBridge {
   connectSession?: (payload: {
@@ -201,6 +202,9 @@ export function AccountSheet({
                     <Trash2 size={14} /> Remove
                   </Button>
                 </div>
+              </div>
+              <div className="account-hero-calendar">
+                <PostCalendar posts={detail.posts} color={PLATFORM_CHART_COLORS[account.platform]} today={today} />
               </div>
               <div className="account-hero-followers">
                 <span>Followers</span>

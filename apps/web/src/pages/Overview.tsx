@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
-import type { Account, Format, Plan } from '@creator-center/shared';
+import type { Account, Format } from '@creator-center/shared';
 import {
   PLATFORMS,
   formatCompact,
@@ -24,7 +24,7 @@ import {
 } from '@creator-center/shared';
 import { useWorkspace } from '../state';
 import { cn, PLATFORM_CHART_COLORS } from '../utils';
-import { Timeline } from '../components/Timeline';
+import { PostDateGraph } from '../components/PostDateGraph';
 import { CommunitySparklines, FollowerDotPool, PlatformBars, Sparkline } from '../components/charts';
 import {
   AccountAvatar,
@@ -37,12 +37,10 @@ import {
 export function OverviewPage({
   onOpenAccount,
   onNewPlan,
-  onEditPlan,
   onAddAccount,
 }: {
   onOpenAccount: (id: string) => void;
   onNewPlan: (options: { format?: Format; date?: string | null; platform?: Account['platform']; accountId?: string | null }) => void;
-  onEditPlan: (plan: Plan) => void;
   onAddAccount: () => void;
 }) {
   const { dashboard, sync, loadDemo } = useWorkspace();
@@ -198,13 +196,12 @@ export function OverviewPage({
         </aside>
       </div>
 
-      <Timeline
+      <PostDateGraph
         plans={plans}
         posts={posts}
         accounts={accounts}
         merges={merges}
         today={today}
-        onEditPlan={onEditPlan}
         onOpenAccount={onOpenAccount}
         onNewPlan={onNewPlan}
       />

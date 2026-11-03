@@ -117,6 +117,23 @@ collector adds no new UI, so there is no new before/after capture.
 公众号 joins the other browser collectors. It uses the account view's existing **Sign in**
 action and adds no new UI, so there is no new before/after capture.
 
+## Post date graph and posting calendar (v0.1.7)
+
+| Before — main at `4ae5e9c` | After — this PR |
+| --- | --- |
+| ![Before publishing timeline](before-post-graph.png) | ![After posts by date graph](after-post-graph.png) |
+| ![Before account drawer](before-account-calendar.png) | ![After account drawer](after-account-calendar.png) |
+
+- All pairs use the 1440 × 940 CSS viewport, the light theme and the demo workspace. The panel pair
+  is cropped to the replaced section so the whole 15-day timeline and the new graph are visible; the
+  drawer pair is a full viewport capture (the drawer itself is 980 px wide in both).
+- [after-post-graph-dark.png](after-post-graph-dark.png) — the same graph in the dark theme.
+- The graph shows published posts from 5 October to 3 November 2026: one square block per post,
+  stacked per Shanghai day, platform colours and a diagonal hatch for the three merged groups.
+  Clicking a block opens the post detail; clicking a merged block opens its merge editor.
+- The account drawer adds a 13-week posting calendar in the identity header: month and weekday
+  labels, four intensity levels and a Less/More legend.
+
 ## Original first increment
 
 | File | What it shows |

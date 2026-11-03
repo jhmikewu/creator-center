@@ -229,7 +229,6 @@ export function App() {
             <OverviewPage
               onOpenAccount={openAccount}
               onNewPlan={newPlan}
-              onEditPlan={editPlan}
               onAddAccount={() => setAddAccountOpen(true)}
             />
           ) : route === 'planner' ? (

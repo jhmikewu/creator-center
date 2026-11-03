@@ -17,6 +17,16 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.7',
+    date: '3 November 2026',
+    title: 'Post date graph and posting calendar',
+    items: [
+      'The overview timeline is replaced by a 30-day graph: one square block per published post, stacked by day in platform colours, with a diagonal hatch for merged groups.',
+      'The account view adds a GitHub-style posting calendar in the identity header, with month and weekday labels and four intensity levels.',
+      'Post details and the merge editor open from the graph; plans stay in the Content planner.',
+    ],
+  },
+  {
     version: '0.1.6',
     date: '3 November 2026',
     title: 'Live 公众号 collection',
@@ -116,7 +126,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.6'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.7'}</Badge>
       </header>
 
       <div className="about-grid">

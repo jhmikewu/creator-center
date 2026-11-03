@@ -284,3 +284,10 @@ export function planPlatforms(plan: Pick<Plan, 'targets'>): Platform[] {
   for (const target of plan.targets) if (!seen.includes(target.platform)) seen.push(target.platform);
   return PLATFORM_KEYS.filter((platform) => seen.includes(platform));
 }
+
+/** The state shown in the planner list. */
+export function planStatus(plan: Plan): 'published' | 'scheduled' | 'idea' | 'planned' {
+  if (plan.publications.length) return 'published';
+  if (plan.scheduledFor) return 'planned';
+  return 'idea';
+}
