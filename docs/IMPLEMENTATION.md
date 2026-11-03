@@ -225,7 +225,7 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 
 ## Verification performed
 
-- `npm test` — 43 tests, all passing (including the font-scale settings round-trip and a synthetic old-database import).
+- `npm test` — 44 tests, all passing (including the font-scale settings round-trip and a synthetic old-database import).
 - `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
 - `npm run build` — all four packages build; Vite production bundle produced.
 - API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.

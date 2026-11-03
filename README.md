@@ -120,7 +120,7 @@ and refuses a non-empty destination.
 ## Tests and checks
 
 ```sh
-npm test          # 43 domain/API/database tests
+npm test          # 44 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```

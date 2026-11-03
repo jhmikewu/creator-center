@@ -107,6 +107,7 @@ export function previewOldWorkspace(
       old.close();
     }
   } catch (error) {
+    const destination = destinationStatus(db);
     return {
       sourcePath,
       valid: false,
@@ -114,8 +115,8 @@ export function previewOldWorkspace(
       tables: [],
       missingTables: [...REQUIRED_TABLES],
       counts: emptyCounts(),
-      destinationReady: listAccounts(db).length === 0,
-      destinationAccounts: listAccounts(db).length,
+      destinationReady: destination.ready,
+      destinationAccounts: destination.accounts,
       warnings: [],
     };
   }
@@ -147,12 +148,8 @@ function inspectOldDatabase(old: Database.Database, db: DB, dataDir: string, sou
       warnings.push('One account payload is not valid JSON and will be skipped.');
     }
   }
-  const accounts = listAccounts(db);
-  const destinationPlanCount = countDestinationTable(db, 'plans');
-  const destinationMergeCount = countDestinationTable(db, 'merges');
-  const destinationTodoCount = countDestinationTable(db, 'todos');
-  const destinationReady =
-    accounts.length === 0 && destinationPlanCount === 0 && destinationMergeCount === 0 && destinationTodoCount === 0;
+  const destination = destinationStatus(db);
+  const destinationReady = destination.ready;
   if (!destinationReady) {
     warnings.push(
       'The new workspace is not empty. Remove the demo workspace or any existing accounts, plans, merges and to-dos before importing.',
@@ -177,7 +174,7 @@ function inspectOldDatabase(old: Database.Database, db: DB, dataDir: string, sou
       missingTables,
       counts,
       destinationReady,
-      destinationAccounts: accounts.length,
+      destinationAccounts: destination.accounts,
       warnings,
     };
   }
@@ -189,9 +186,19 @@ function inspectOldDatabase(old: Database.Database, db: DB, dataDir: string, sou
     missingTables: [],
     counts,
     destinationReady,
-    destinationAccounts: accounts.length,
+    destinationAccounts: destination.accounts,
     warnings,
   };
+}
+
+function destinationStatus(db: DB): { ready: boolean; accounts: number } {
+  const accounts = listAccounts(db).length;
+  const ready =
+    accounts === 0 &&
+    countDestinationTable(db, 'plans') === 0 &&
+    countDestinationTable(db, 'merges') === 0 &&
+    countDestinationTable(db, 'todos') === 0;
+  return { ready, accounts };
 }
 
 function countDestinationTable(db: DB, table: 'plans' | 'merges' | 'todos'): number {
@@ -210,7 +217,7 @@ export function importOldWorkspace(db: DB, dataDir: string, sourceInput: string)
   if (!preview.destinationReady) {
     throw new MigrationError(
       409,
-      'The new workspace already has accounts. Remove the demo workspace or existing accounts before importing.',
+      'The new workspace is not empty. Remove the demo workspace or any existing accounts, plans, merges and to-dos before importing.',
     );
   }
   const sourcePath = resolveMigrationSource(sourceInput);
@@ -223,7 +230,7 @@ export function importOldWorkspace(db: DB, dataDir: string, sourceInput: string)
     backupPath = backupBeforeImport(db, dataDir);
     const postByPlatformContent = new Map<string, string>();
     const accountByPlatform = new Map<Platform, Account>();
-    let now = isoNow();
+    const now = isoNow();
 
     const importedCommunityDays = new Set<string>();
     const run = db.transaction(() => {
@@ -233,7 +240,7 @@ export function importOldWorkspace(db: DB, dataDir: string, sourceInput: string)
         try {
           payload = JSON.parse(row.payload) as Record<string, unknown>;
         } catch {
-          skipped.content += 1;
+          warnings.push(`Skipped an old account with unreadable JSON (${row.id}).`);
           continue;
         }
         const platform = isPlatform(payload.id) ? payload.id : isPlatform(row.id) ? row.id : null;
@@ -335,8 +342,8 @@ export function importOldWorkspace(db: DB, dataDir: string, sourceInput: string)
       for (const row of old.prepare('SELECT name FROM tags').all() as { name: string }[]) {
         try {
           const tag = canonicalTag(row.name);
-          db.prepare('INSERT OR IGNORE INTO tags(name, created_at) VALUES (?, ?)').run(tag, now);
-          imported.tags += 1;
+          const inserted = db.prepare('INSERT OR IGNORE INTO tags(name, created_at) VALUES (?, ?)').run(tag, now);
+          if (inserted.changes > 0) imported.tags += 1;
         } catch {
           warnings.push(`Skipped an invalid old tag (${row.name}).`);
         }
@@ -477,8 +484,8 @@ export function importOldWorkspace(db: DB, dataDir: string, sourceInput: string)
         updated_at: string;
       }[]) {
         if (!row.title?.trim()) continue;
-        insertTodo.run(row.id, row.title.trim(), row.done ? 1 : 0, row.created_at, row.updated_at);
-        imported.todos += 1;
+        const inserted = insertTodo.run(row.id, row.title.trim(), row.done ? 1 : 0, row.created_at, row.updated_at);
+        if (inserted.changes > 0) imported.todos += 1;
       }
 
       // Community history: old history becomes the daily catalogue series.
@@ -543,7 +550,6 @@ export function importOldWorkspace(db: DB, dataDir: string, sourceInput: string)
       }
     });
     run();
-    now = isoNow();
   } finally {
     old.close();
   }

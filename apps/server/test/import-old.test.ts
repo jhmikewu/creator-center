@@ -246,6 +246,31 @@ describe('old workspace migration', () => {
     }
   });
 
+  it('treats leftover plans, merges or to-dos as a non-empty destination', () => {
+    const source = makeOldDatabase();
+    const dataDir = tempDir('creator-center-new-');
+    const db = openDatabase(dataDir);
+    try {
+      db.prepare(
+        'INSERT INTO todos(id, title, done, created_at, updated_at) VALUES (?, ?, 0, ?, ?)',
+      ).run(
+        'existing-todo',
+        'Existing to-do',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+      );
+      const preview = previewOldWorkspace(db, dataDir, source);
+      expect(preview.valid).toBe(true);
+      expect(preview.destinationReady).toBe(false);
+      expect(preview.destinationAccounts).toBe(0);
+      expect(() => importOldWorkspace(db, dataDir, source)).toThrow(MigrationError);
+      expect(listAccounts(db)).toEqual([]);
+      expect(listTodos(db)).toHaveLength(1);
+    } finally {
+      db.close();
+    }
+  });
+
   it('returns a readable error for a missing or wrong database', () => {
     const dataDir = tempDir('creator-center-new-');
     const db = openDatabase(dataDir);
