@@ -30,10 +30,10 @@ import {
   TextInput,
 } from '../components/ui';
 
-const FONT_SCALES: { value: number; label: string; hint: string }[] = [
-  { value: 1, label: 'Compact', hint: 'Fits smaller screens' },
-  { value: 1.12, label: 'Comfortable', hint: 'Recommended' },
-  { value: 1.3, label: 'Large', hint: 'Easier reading' },
+const FONT_SCALES: { value: number; label: string }[] = [
+  { value: 1, label: 'Compact' },
+  { value: 1.12, label: 'Comfortable' },
+  { value: 1.3, label: 'Large' },
 ];
 
 export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
@@ -170,9 +170,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
     <div className="page settings-page">
       <header className="page-heading">
         <div>
-          <span className="eyebrow">LOCAL WORKSPACE</span>
           <h1>Settings</h1>
-          <p>Appearance, data location, the optional community endpoint and the media paths for the next increment.</p>
         </div>
         <Badge tone="neutral">v{bootstrap?.version ?? '0.1.0'} · schema {bootstrap?.schemaVersion ?? '—'}</Badge>
       </header>
@@ -183,7 +181,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><Sparkles size={17} /></span>
             <div>
               <h2>Appearance</h2>
-              <p>Dark mode is a preference, not a separate theme build.</p>
             </div>
           </div>
           <div className="settings-row">
@@ -204,7 +201,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               <span className="settings-icon settings-icon-small"><Type size={15} /></span>
               <div>
                 <strong>Text size</strong>
-                <p>Scales every label, table and card. Use Compact to fit smaller screens.</p>
               </div>
               <Badge tone="neutral">{Math.round((settings.fontScale ?? 1.12) * 100)}%</Badge>
             </div>
@@ -220,7 +216,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
                 >
                   <strong>{option.label}</strong>
                   <span>{Math.round(option.value * 100)}%</span>
-                  <small>{option.hint}</small>
                 </button>
               ))}
             </div>
@@ -231,7 +226,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               </div>
               <div className="font-preview-sample">
                 <strong className="font-preview-title">Overview</strong>
-                <p className="font-preview-body">Every channel, plan and measurement in one place.</p>
+                <p className="font-preview-body">Accounts, plans and measurements.</p>
                 <div className="font-preview-metrics">
                   <span><small>Followers</small><strong>128.4k</strong></span>
                   <span><small>Published · 60 days</small><strong>20</strong></span>
@@ -239,7 +234,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
                 </div>
                 <div className="font-preview-foot">
                   <Badge tone="success">Connected</Badge>
-                  <span className="font-preview-tiny">The smallest labels scale with this setting.</span>
                 </div>
               </div>
             </div>
@@ -251,7 +245,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><Database size={17} /></span>
             <div>
               <h2>Local data</h2>
-              <p>One SQLite workspace, versioned migrations and no cloud account.</p>
             </div>
           </div>
           <div className="data-path">
@@ -264,10 +257,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span><HardDrive size={14} /> SQLite · schema {bootstrap?.schemaVersion ?? '—'}</span>
             <span><FolderOpen size={14} /> {bootstrap?.desktop ? 'Desktop app data directory' : 'Local server data directory'}</span>
           </div>
-          <p className="panel-footnote">
-            Back up this directory while the app is closed. Secrets are not stored here in plain text;
-            platform sessions belong to the collector increment and will use the OS keychain.
-          </p>
+          <p className="panel-footnote">Back up this directory while the app is closed.</p>
         </section>
 
         <section className="panel settings-card settings-wide migration-card">
@@ -275,7 +265,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><ArchiveRestore size={17} /></span>
             <div>
               <h2>Import the old workspace</h2>
-              <p>Bring accounts, metrics, history, plans, merges, to-dos and community history across from the old app.</p>
             </div>
             <Badge tone={migrationResult || migrationDestinationReady ? 'success' : 'warning'}>
               {migrationResult
@@ -290,7 +279,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
           <div className="migration-source">
             <Field
               label="Old SQLite database"
-              hint="Use a copy of the old app database. Browser sessions, YouTube tokens and dashboard passwords are not imported."
+              hint="Use a copy of the old database. Sessions, tokens and passwords are not imported."
             >
               <div className="migration-source-row">
                 <TextInput
@@ -330,17 +319,13 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               </div>
               <div className="migration-counts">
                 <MigrationCount label="Accounts" value={migrationPreview.counts.accounts} />
-                <MigrationCount
-                  label="Content"
-                  value={migrationPreview.counts.content + migrationPreview.counts.scheduled}
-                  hint={migrationPreview.counts.scheduled ? `${migrationPreview.counts.scheduled} scheduled` : undefined}
-                />
-                <MigrationCount label="History" value={migrationPreview.counts.history} hint="daily points" />
+                <MigrationCount label="Content" value={migrationPreview.counts.content + migrationPreview.counts.scheduled} />
+                <MigrationCount label="History" value={migrationPreview.counts.history} />
                 <MigrationCount label="Plans" value={migrationPreview.counts.plans} />
                 <MigrationCount label="Merges" value={migrationPreview.counts.merges} />
                 <MigrationCount label="To-dos" value={migrationPreview.counts.todos} />
-                <MigrationCount label="Community" value={migrationPreview.counts.communityDays} hint="days" />
-                <MigrationCount label="Media" value={migrationPreview.counts.mediaJobs} hint="preserved" />
+                <MigrationCount label="Community" value={migrationPreview.counts.communityDays} />
+                <MigrationCount label="Media" value={migrationPreview.counts.mediaJobs} />
                 <MigrationCount label="Tags" value={migrationPreview.counts.tags} />
               </div>
               {migrationPreview.warnings.length > 0 && (
@@ -378,7 +363,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               <ArchiveRestore size={15} /> Import workspace
             </Button>
             <span className="muted">
-              A backup of the current local database is created before any data is written.
+              A backup is created before any data is written.
             </span>
           </div>
         </section>
@@ -388,13 +373,11 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><Server size={17} /></span>
             <div>
               <h2>Community status endpoint</h2>
-              <p>Optional. A missing endpoint degrades gracefully; the rest of the workspace is unaffected.</p>
             </div>
           </div>
           <label className="switch-row">
             <span>
               <strong>Enable the community monitor</strong>
-              <small>The catalogue and worker health stay hidden when disabled.</small>
             </span>
             <input
               type="checkbox"
@@ -405,7 +388,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               }}
             />
           </label>
-          <Field label="Status endpoint" hint="The forum's status API. Demo workspaces use demo://community.">
+          <Field label="Status endpoint">
             <TextInput
               value={communityEndpoint}
               onChange={(event) => setCommunityEndpoint(event.target.value)}
@@ -427,7 +410,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><RefreshCw size={17} /></span>
             <div>
               <h2>Sync</h2>
-              <p>About every six hours, on demand, and at start-up when due.</p>
             </div>
           </div>
           <div className="sync-facts">
@@ -455,20 +437,19 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><FolderOpen size={17} /></span>
             <div>
               <h2>Media paths</h2>
-              <p>Stored now for the media increment. The core workspace never depends on these paths.</p>
             </div>
           </div>
           <div className="form-grid form-grid-2">
-            <Field label="Watched inbox" hint="New .mov and .mp4 recordings are detected here.">
+            <Field label="Watched inbox">
               <TextInput value={mediaInbox} onChange={(event) => setMediaInbox(event.target.value)} placeholder="/Users/you/Desktop/media_inbox" />
             </Field>
-            <Field label="Output folder" hint="Converted full videos and chapter exports.">
+            <Field label="Output folder">
               <TextInput value={mediaOutput} onChange={(event) => setMediaOutput(event.target.value)} placeholder="/Users/you/Desktop/next_upload" />
             </Field>
-            <Field label="Archive folder" hint="Linked projects move here.">
+            <Field label="Archive folder">
               <TextInput value={mediaArchive} onChange={(event) => setMediaArchive(event.target.value)} placeholder="/Users/you/Desktop/archive" />
             </Field>
-            <Field label="Optional external worker" hint="The existing Unraid worker, when configured. Core stays local.">
+            <Field label="Optional external worker">
               <TextInput value={externalWorkerUrl} onChange={(event) => setExternalWorkerUrl(event.target.value)} placeholder="https://worker.example.lan" />
             </Field>
           </div>
@@ -487,7 +468,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             >
               <Check size={15} /> Save media paths
             </Button>
-            <span className="muted">Conversion, chapters, joins and covers are the next implementation increment.</span>
           </div>
         </section>
 
@@ -496,7 +476,6 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><UserPlus size={17} /></span>
             <div>
               <h2>Accounts</h2>
-              <p>{accounts.length} account{accounts.length === 1 ? '' : 's'}; multiple accounts per platform are supported.</p>
             </div>
           </div>
           <div className="settings-accounts">
@@ -515,14 +494,12 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             <span className="settings-icon"><Layers size={17} /></span>
             <div>
               <h2>Demo workspace</h2>
-              <p>Sample accounts, history and plans for evaluation. Clearly marked everywhere.</p>
             </div>
           </div>
           {settings.demoMode ? (
             <>
               <p className="muted">
-                {demoAccounts.length} demo account{demoAccounts.length === 1 ? '' : 's'} loaded. Removing the demo
-                workspace also removes its plans, merges, to-dos and community snapshots.
+                {demoAccounts.length} demo account{demoAccounts.length === 1 ? '' : 's'} loaded.
               </p>
               <Button variant="danger" onClick={() => setConfirmDemoRemove(true)}>
                 <Trash2 size={15} /> Remove demo workspace
@@ -530,10 +507,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             </>
           ) : (
             <>
-              <p className="muted">
-                The demo workspace can only be loaded into an empty workspace. It is a safe way to see
-                every workflow without touching a platform session.
-              </p>
+              <p className="muted">Loads only into an empty workspace.</p>
               <Button variant="secondary" onClick={() => setConfirmDemoLoad(true)} disabled={accounts.length > 0}>
                 <Sparkles size={15} /> Load demo workspace
               </Button>

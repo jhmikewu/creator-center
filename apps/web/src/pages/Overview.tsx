@@ -8,10 +8,8 @@ import {
   Plus,
   Radio,
   RefreshCw,
-  Sparkles,
   TrendingUp,
   Users,
-  WifiOff,
 } from 'lucide-react';
 import type { Account, Format, Plan } from '@creator-center/shared';
 import {
@@ -47,7 +45,7 @@ export function OverviewPage({
   onEditPlan: (plan: Plan) => void;
   onAddAccount: () => void;
 }) {
-  const { dashboard, settings, sync, loadDemo, notify } = useWorkspace();
+  const { dashboard, sync, loadDemo } = useWorkspace();
   const today = dashboard?.today ?? todayShanghai();
   const accounts = dashboard?.accounts ?? [];
   const history = dashboard?.history ?? [];
@@ -71,7 +69,7 @@ export function OverviewPage({
   }, []);
 
   if (accounts.length === 0) {
-    return <Onboarding onAddAccount={onAddAccount} onDemo={() => void loadDemo()} notify={notify} settings={settings} />;
+    return <Onboarding onAddAccount={onAddAccount} onDemo={() => void loadDemo()} />;
   }
 
   return (
@@ -80,37 +78,20 @@ export function OverviewPage({
         <div>
           <span className="eyebrow">{heading} · ASIA/SHANGHAI</span>
           <h1>Overview</h1>
-          <p>
-            {dashboard?.scope.kind === 'all'
-              ? 'Every channel, plan and measurement in one place.'
-              : `Showing ${accounts.length} account${accounts.length === 1 ? '' : 's'} in this scope.`}
-          </p>
         </div>
         <div className="heading-status">
           <span className="measurement-line">
             <StatusDot tone={sync?.error ? 'warn' : 'good'} />
             {sync?.running ? 'Syncing sources…' : latest ? `Latest measurement ${relativeToNow(latest)}` : 'Waiting for the first measurement'}
           </span>
-          <span className="heading-caveat">Aggregate totals are sums of the selected accounts; audiences overlap.</span>
         </div>
       </header>
-
-      {settings?.demoMode && (
-        <div className="demo-banner">
-          <Sparkles size={16} />
-          <span>
-            You are looking at a demo workspace. The accounts, posts and history are sample data and
-            are marked as demo everywhere.
-          </span>
-        </div>
-      )}
 
       <section className="kpi-band" aria-label="Workspace totals">
         <KpiCard
           icon={<Users size={18} />}
           label="Audience across accounts"
           value={dashboard?.totals.audienceAccounts ? formatCompact(dashboard.totals.audience) : '—'}
-          hint={`${dashboard?.totals.audienceAccounts ?? 0} measured account${(dashboard?.totals.audienceAccounts ?? 0) === 1 ? '' : 's'} · not unique people`}
           tone="teal"
         />
         <KpiCard
@@ -121,21 +102,18 @@ export function OverviewPage({
               ? '—'
               : `${dashboard.totals.followers7dGain >= 0 ? '+' : ''}${formatCompact(dashboard.totals.followers7dGain)}`
           }
-          hint="Compared with the last reading on or before 7 days ago"
           tone="ochre"
         />
         <KpiCard
           icon={<Radio size={18} />}
           label="Published · 60 days"
           value={formatCompact(dashboard?.totals.publishedPosts)}
-          hint="Collected posts in the current content window"
           tone="blue"
         />
         <KpiCard
           icon={<CalendarClock size={18} />}
           label="Scheduled"
           value={formatCompact(dashboard?.totals.upcoming)}
-          hint="Platform releases from today forward"
           tone="rose"
         />
       </section>
@@ -144,7 +122,6 @@ export function OverviewPage({
         <div className="overview-main">
           <SectionHeading
             title="Your accounts"
-            hint="Each account keeps its own identity, metrics and history."
             action={
               <div className="heading-actions">
                 <span className="muted">{accounts.length} in scope · * recent window</span>
@@ -169,7 +146,6 @@ export function OverviewPage({
                 <Plus size={20} />
               </span>
               <strong>Add another account</strong>
-              <span>Two accounts on the same platform are kept fully separate.</span>
             </button>
           </div>
         </div>
@@ -194,10 +170,6 @@ export function OverviewPage({
               </div>
             </div>
             <PlatformBars breakdown={dashboard?.platformBreakdown ?? []} />
-            <p className="panel-footnote">
-              Platform figures keep their own definitions and reporting periods. Only the audience total
-              is an explicit sum, and it is not unique people.
-            </p>
           </section>
 
           <section className="panel community-mini">
@@ -258,13 +230,11 @@ function KpiCard({
   icon,
   label,
   value,
-  hint,
   tone,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  hint: string;
   tone: 'teal' | 'ochre' | 'blue' | 'rose';
 }) {
   return (
@@ -274,7 +244,6 @@ function KpiCard({
         <span className="kpi-label">{label}</span>
       </div>
       <strong className="kpi-value">{value}</strong>
-      <span className="kpi-hint">{hint}</span>
     </div>
   );
 }
@@ -377,24 +346,15 @@ function AccountCard({
 function Onboarding({
   onAddAccount,
   onDemo,
-  notify,
-  settings,
 }: {
   onAddAccount: () => void;
   onDemo: () => void;
-  notify: (message: string, tone?: 'info' | 'success' | 'error') => void;
-  settings: import('@creator-center/shared').AppSettings | null;
 }) {
   return (
     <div className="page onboarding-page">
       <section className="onboarding-hero">
         <div className="onboarding-copy">
-          <span className="eyebrow">A LOCAL-FIRST WORKSPACE</span>
-          <h1>A calmer command centre for your channels.</h1>
-          <p>
-            Creator Center keeps every account, plan, post and measurement on this machine. It never
-            publishes, likes or comments for you, and it never mixes one account's numbers into another's.
-          </p>
+          <h1>Add an account to start.</h1>
           <div className="onboarding-actions">
             <Button onClick={onAddAccount}>
               <Plus size={16} /> Add your first account
@@ -403,7 +363,6 @@ function Onboarding({
               <Layers size={16} /> Explore the demo workspace
             </Button>
           </div>
-          {settings?.demoMode && <p className="muted">A demo workspace is already loaded.</p>}
         </div>
         <div className="onboarding-visual" aria-hidden="true">
           <div className="onboarding-card card-a">
@@ -430,31 +389,20 @@ function Onboarding({
         </div>
       </section>
       <div className="onboarding-steps">
-        <Step number="01" icon={<Users size={19} />} title="Connect accounts" body="One or several accounts per platform, each with its own isolated session and id." />
-        <Step number="02" icon={<CalendarClock size={19} />} title="Plan and track" body="Plans, tags, calendar dates and publication links. Nothing is published by the app." />
-        <Step number="03" icon={<MessageSquare size={19} />} title="Keep the whole picture" body="Follower history, per-post metrics and the community monitor stay in the same workspace." />
-      </div>
-      <div className="onboarding-note">
-        <WifiOff size={16} />
-        <span>
-          No cloud account, no telemetry and no hosted backend. The core workspace works offline;
-          platform refreshes need a connection.
-        </span>
-        <button type="button" className="text-link" onClick={() => notify('Open Settings to review the data directory and theme.', 'info')}>
-          Where is my data?
-        </button>
+        <Step number="01" icon={<Users size={19} />} title="Connect accounts" />
+        <Step number="02" icon={<CalendarClock size={19} />} title="Plan and track" />
+        <Step number="03" icon={<MessageSquare size={19} />} title="Keep the whole picture" />
       </div>
     </div>
   );
 }
 
-function Step({ number, icon, title, body }: { number: string; icon: React.ReactNode; title: string; body: string }) {
+function Step({ number, icon, title }: { number: string; icon: React.ReactNode; title: string }) {
   return (
     <div className="onboarding-step">
       <span className="step-number">{number}</span>
       <span className="step-icon">{icon}</span>
       <strong>{title}</strong>
-      <p>{body}</p>
     </div>
   );
 }
