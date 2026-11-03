@@ -54,6 +54,9 @@ set is in [docs/screenshots](docs/screenshots).
 - **Demo workspace.** Six sample accounts (including two on 抖音), thirty days of history,
   realistic plans, posts, three account-keyed merges, scheduled releases and community snapshots.
   It is clearly marked and removable in Settings.
+- **Old-workspace import.** An opt-in Settings workflow and CLI migrate the old app's accounts,
+  metrics, history, posts, plans, tags, merges, to-dos and Community history. Preview first,
+  require an empty workspace, and create a timestamped database backup automatically.
 
 ## Run it
 
@@ -87,10 +90,37 @@ port, waits for `/api/health`, and loads the built renderer. This keeps SQLite n
 the Electron ABI and gives the next packaging increment a single backend contract. The launcher
 removes `ELECTRON_RUN_AS_NODE` when it is inherited from an automation environment.
 
+## Migrating the old workspace
+
+The importer reads the old app's SQLite database directly and never modifies it.
+
+```sh
+# Inspect first; writes nothing
+npm run import:old -- --source ~/downloads/fieldnotes-20261103.sqlite3 --data-dir ~/.creator-center --dry-run
+
+# Import into an empty workspace
+npm run import:old -- --source ~/downloads/fieldnotes-20261103.sqlite3 --data-dir ~/.creator-center
+```
+
+In the app, open **Settings → Import the old workspace**, choose or paste the database path, press
+**Preview**, then **Import workspace**. The destination must have no accounts (remove the demo
+workspace first). A timestamped backup is written to `<data-directory>/backups/` before the
+transaction starts.
+
+Accounts keep one stable `legacy-<platform>` row per old platform (the old app had one account per
+platform); metrics, history, content, plan targets/publication links, merges and to-dos are mapped
+into the account-keyed model. Community history comes across as daily snapshots. Media project
+metadata is preserved in a `legacy_media_jobs` staging table for the media increment, but media
+files are not yet relinked.
+
+Old browser sessions, YouTube OAuth tokens and dashboard passwords are **not imported**; reconnect
+each account after migration. The importer requires the old database to have the expected tables
+and refuses a non-empty destination.
+
 ## Tests and checks
 
 ```sh
-npm test          # 40 domain/API/database tests
+npm test          # 44 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```

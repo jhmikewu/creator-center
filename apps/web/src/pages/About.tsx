@@ -17,6 +17,16 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.2',
+    date: '3 November 2026',
+    title: 'Old workspace import',
+    items: [
+      'Added an opt-in importer for the old SQLite workspace: accounts, metrics, history, posts, plans, tags, merges, to-dos and Community history.',
+      'Every import previews the source first, requires an empty workspace, creates a timestamped database backup, and preserves media project metadata for the media increment.',
+      'Old browser sessions and YouTube tokens are deliberately not imported; accounts reconnect after migration.',
+    ],
+  },
+  {
     version: '0.1.1',
     date: '3 November 2026',
     title: 'Readability and macOS window controls',
@@ -77,7 +87,7 @@ export function AboutPage() {
           <h1>About &amp; to-dos</h1>
           <p>A personal workspace, the decisions behind it, and the small list that keeps it moving.</p>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.0'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.2'}</Badge>
       </header>
 
       <div className="about-grid">

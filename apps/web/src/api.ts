@@ -1,6 +1,8 @@
 import type {
   Account,
   AppSettings,
+  MigrationPreview,
+  MigrationResult,
   CommunityState,
   Dashboard,
   Merge,
@@ -137,6 +139,16 @@ export const api = {
       method: 'POST',
     }),
   syncState: () => request<SyncState>('/api/sync'),
+  previewMigration: (sourcePath: string) =>
+    request<MigrationPreview>('/api/migration/old/preview', {
+      method: 'POST',
+      body: JSON.stringify({ path: sourcePath }),
+    }),
+  importMigration: (sourcePath: string) =>
+    request<MigrationResult>('/api/migration/old', {
+      method: 'POST',
+      body: JSON.stringify({ path: sourcePath }),
+    }),
   seedDemo: () => request<{ ok: boolean; accounts: Account[] }>('/api/demo/seed', { method: 'POST' }),
   removeDemo: () => request<void>('/api/demo', { method: 'DELETE' }),
 };

@@ -344,3 +344,39 @@ export interface DownloadTarget {
   name: string;
   href: string;
 }
+
+export interface MigrationCounts {
+  accounts: number;
+  history: number;
+  content: number;
+  scheduled: number;
+  plans: number;
+  merges: number;
+  todos: number;
+  tags: number;
+  communityDays: number;
+  mediaJobs: number;
+}
+
+export interface MigrationPreview {
+  sourcePath: string;
+  valid: boolean;
+  error: string | null;
+  tables: string[];
+  missingTables: string[];
+  counts: MigrationCounts;
+  destinationReady: boolean;
+  destinationAccounts: number;
+  warnings: string[];
+}
+
+export interface MigrationResult extends MigrationPreview {
+  imported: MigrationCounts;
+  skipped: {
+    plans: number;
+    merges: number;
+    content: number;
+    publications: number;
+  };
+  backupPath: string;
+}

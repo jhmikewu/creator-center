@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
+  AlertTriangle,
+  ArchiveRestore,
   Check,
   Clipboard,
   Database,
@@ -13,8 +15,9 @@ import {
   Type,
   UserPlus,
 } from 'lucide-react';
-import type { AppSettings } from '@creator-center/shared';
+import type { AppSettings, MigrationPreview, MigrationResult } from '@creator-center/shared';
 import { formatDateTime, relativeUntil } from '@creator-center/shared';
+import { api } from '../api';
 import { useWorkspace } from '../state';
 import { cn } from '../utils';
 import {
@@ -43,6 +46,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
     loadDemo,
     removeDemo,
     notify,
+    refresh,
   } = useWorkspace();
   const [communityEndpoint, setCommunityEndpoint] = useState(settings?.communityEndpoint ?? '');
   const [communityEnabled, setCommunityEnabled] = useState(settings?.communityEnabled ?? true);
@@ -53,6 +57,12 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
   const [confirmDemoLoad, setConfirmDemoLoad] = useState(false);
   const [confirmDemoRemove, setConfirmDemoRemove] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [migrationPath, setMigrationPath] = useState('');
+  const [migrationPreview, setMigrationPreview] = useState<MigrationPreview | null>(null);
+  const [migrationResult, setMigrationResult] = useState<MigrationResult | null>(null);
+  const [migrationError, setMigrationError] = useState('');
+  const [migrationBusy, setMigrationBusy] = useState(false);
+  const [confirmMigration, setConfirmMigration] = useState(false);
 
   useEffect(() => {
     if (!settings) return;
@@ -99,7 +109,61 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
     }
   }
 
+  async function chooseMigrationFile() {
+    const bridge = (window as unknown as { creatorCenter?: { chooseFile?: () => Promise<string | null> } })
+      .creatorCenter;
+    if (!bridge?.chooseFile) return;
+    const chosen = await bridge.chooseFile();
+    if (chosen) {
+      setMigrationPath(chosen);
+      setMigrationPreview(null);
+      setMigrationResult(null);
+      setMigrationError('');
+    }
+  }
+
+  async function previewMigration() {
+    setMigrationBusy(true);
+    setMigrationError('');
+    setMigrationResult(null);
+    try {
+      const preview = await api.previewMigration(migrationPath);
+      setMigrationPreview(preview);
+      if (!preview.valid) setMigrationError(preview.error ?? 'The old database could not be read.');
+    } catch (error) {
+      setMigrationError(error instanceof Error ? error.message : 'The old database could not be previewed.');
+      setMigrationPreview(null);
+    } finally {
+      setMigrationBusy(false);
+    }
+  }
+
+  async function runMigration() {
+    setMigrationBusy(true);
+    setMigrationError('');
+    try {
+      const result = await api.importMigration(migrationPath);
+      setMigrationResult(result);
+      setMigrationPreview(result);
+      setConfirmMigration(false);
+      notify(
+        `Imported ${result.imported.accounts} accounts, ${result.imported.content + result.imported.scheduled} posts and ${result.imported.history} history points.`,
+        'success',
+      );
+      await refresh();
+    } catch (error) {
+      setMigrationError(error instanceof Error ? error.message : 'The old workspace could not be imported.');
+      setConfirmMigration(false);
+    } finally {
+      setMigrationBusy(false);
+    }
+  }
+
   const accounts = bootstrap?.accounts ?? [];
+  const hasDemoAccounts = accounts.some((account) => account.isDemo);
+  const migrationDestinationReady = migrationPreview?.destinationReady ?? accounts.length === 0;
+  const chooseFile = (window as unknown as { creatorCenter?: { chooseFile?: () => Promise<string | null> } })
+    .creatorCenter?.chooseFile;
   const demoAccounts = accounts.filter((account) => account.isDemo);
 
   return (
@@ -204,6 +268,117 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             Back up this directory while the app is closed. Secrets are not stored here in plain text;
             platform sessions belong to the collector increment and will use the OS keychain.
           </p>
+        </section>
+
+        <section className="panel settings-card settings-wide migration-card">
+          <div className="settings-head">
+            <span className="settings-icon"><ArchiveRestore size={17} /></span>
+            <div>
+              <h2>Import the old workspace</h2>
+              <p>Bring accounts, metrics, history, plans, merges, to-dos and community history across from the old app.</p>
+            </div>
+            <Badge tone={migrationResult || migrationDestinationReady ? 'success' : 'warning'}>
+              {migrationResult
+                ? 'Import complete'
+                : migrationDestinationReady
+                  ? 'Workspace empty · ready'
+                  : hasDemoAccounts
+                    ? 'Remove demo before importing'
+                    : 'Workspace not empty'}
+            </Badge>
+          </div>
+          <div className="migration-source">
+            <Field
+              label="Old SQLite database"
+              hint="Use a copy of the old app database. Browser sessions, YouTube tokens and dashboard passwords are not imported."
+            >
+              <TextInput
+                value={migrationPath}
+                onChange={(event) => {
+                  setMigrationPath(event.target.value);
+                  setMigrationPreview(null);
+                  setMigrationResult(null);
+                  setMigrationError('');
+                }}
+                placeholder="~/downloads/fieldnotes-2026-11-03.sqlite3"
+                spellCheck={false}
+              />
+            </Field>
+            {chooseFile && (
+              <Button variant="secondary" onClick={() => void chooseMigrationFile()} disabled={migrationBusy}>
+                Choose file
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              onClick={() => void previewMigration()}
+              disabled={migrationBusy || !migrationPath.trim()}
+            >
+              {migrationBusy ? 'Checking…' : 'Preview'}
+            </Button>
+          </div>
+          {migrationError && (
+            <p className="settings-error" role="alert"><AlertTriangle size={14} /> {migrationError}</p>
+          )}
+          {migrationPreview && migrationPreview.valid && (
+            <div className="migration-report">
+              <div className="migration-report-head">
+                <span className="panel-eyebrow">Found in the old database</span>
+                <span className="migration-path">{migrationPreview.sourcePath}</span>
+              </div>
+              <div className="migration-counts">
+                <MigrationCount label="Accounts" value={migrationPreview.counts.accounts} />
+                <MigrationCount
+                  label="Content"
+                  value={migrationPreview.counts.content + migrationPreview.counts.scheduled}
+                  hint={migrationPreview.counts.scheduled ? `${migrationPreview.counts.scheduled} scheduled` : undefined}
+                />
+                <MigrationCount label="History" value={migrationPreview.counts.history} hint="daily points" />
+                <MigrationCount label="Plans" value={migrationPreview.counts.plans} />
+                <MigrationCount label="Merges" value={migrationPreview.counts.merges} />
+                <MigrationCount label="To-dos" value={migrationPreview.counts.todos} />
+                <MigrationCount label="Community" value={migrationPreview.counts.communityDays} hint="days" />
+                <MigrationCount label="Media" value={migrationPreview.counts.mediaJobs} hint="preserved" />
+                <MigrationCount label="Tags" value={migrationPreview.counts.tags} />
+              </div>
+              {migrationPreview.warnings.length > 0 && (
+                <ul className="migration-warnings">
+                  {migrationPreview.warnings.map((warning) => (
+                    <li key={warning}><AlertTriangle size={12} /> {warning}</li>
+                  ))}
+                </ul>
+              )}
+              {!migrationPreview.destinationReady && (
+                <p className="settings-error">
+                  This workspace is not empty. Remove the demo workspace or any existing accounts,
+                  plans, merges and to-dos before importing.
+                </p>
+              )}
+              {migrationResult && (
+                <p className="migration-success">
+                  <Check size={14} /> Imported {migrationResult.imported.accounts} accounts and
+                  {' '}{migrationResult.imported.content + migrationResult.imported.scheduled} posts.
+                  Backup: <code>{migrationResult.backupPath || 'not created'}</code>
+                </p>
+              )}
+            </div>
+          )}
+          <div className="settings-actions">
+            <Button
+              onClick={() => setConfirmMigration(true)}
+              disabled={
+                migrationBusy ||
+                !migrationPreview?.valid ||
+                !migrationPreview.destinationReady ||
+                Boolean(migrationResult)
+              }
+            >
+              <ArchiveRestore size={15} /> Import workspace
+            </Button>
+            <span className="muted">
+              A backup of the current local database is created before any data is written.
+            </span>
+          </div>
         </section>
 
         <section className="panel settings-card">
@@ -367,6 +542,23 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
       </div>
 
       <ConfirmDialog
+        open={confirmMigration}
+        title="Import the old workspace?"
+        message={
+          <>
+            This writes {migrationPreview?.counts.accounts ?? 0} accounts,
+            {' '}{migrationPreview?.counts.content ?? 0} published posts,
+            {' '}{migrationPreview?.counts.history ?? 0} history points and the rest of the old
+            data into this empty workspace. A timestamped backup is created first. Old browser
+            sessions and YouTube tokens are not imported.
+          </>
+        }
+        confirmLabel="Import workspace"
+        busy={migrationBusy}
+        onClose={() => setConfirmMigration(false)}
+        onConfirm={() => void runMigration()}
+      />
+      <ConfirmDialog
         open={confirmDemoLoad}
         title="Load the demo workspace?"
         message="This adds six sample accounts, thirty days of history, plans, posts, merges and community snapshots. It is only available while the workspace has no accounts."
@@ -397,6 +589,25 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
             .finally(() => setBusy(false));
         }}
       />
+    </div>
+  );
+}
+
+
+function MigrationCount({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: number;
+  hint?: string;
+}) {
+  return (
+    <div className="migration-count">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      {hint && <small>{hint}</small>}
     </div>
   );
 }

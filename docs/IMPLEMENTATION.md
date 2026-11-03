@@ -151,7 +151,10 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 | SEC-03, SEC-04 | Done | Local-only API bind, no telemetry, no inbound listener by default. |
 | SEC-05, SEC-06 | Partial | OS account model; least-privilege file mode work next. |
 | DAT-01, DAT-07 | Done | Versioned SQLite migrations; reopening and demo seeding are tested. |
-| DAT-02..05 | Next | Old workspace/media/OAuth import and backup/restore are the migration increment. |
+| DAT-02, DAT-08 | Done | Old accounts, metrics, history, posts, plans, tags, merges, to-dos and Community history import through a previewed, transactional importer with stable legacy IDs. |
+| DAT-03 | Partial | Media project metadata is preserved in `legacy_media_jobs`; media files are not relinked until the media pipeline lands. |
+| DAT-04 | Next | YouTube OAuth material is deliberately not migrated; accounts reconnect after import. |
+| DAT-05 | Partial | Pre-import backup and a documented data directory exist; general backup/restore remains next. |
 | DAT-06, DAT-08 | Partial | 90-day history pruning and cascade removal exist; retention UI and full old-model migration next. |
 
 ## Sync and adapter contract
@@ -169,6 +172,23 @@ read-side present, live integration absent; **Next** = deliberately deferred.
   or stale, never invent a metric. Replacing one with a live collector does not change the
   overview, planner or timeline.
 
+## Migration
+
+`apps/server/src/services/import-old.ts` owns the import:
+
+- `previewOldWorkspace` opens the source read-only, verifies the expected tables, counts accounts,
+  content, history, plans, merges, to-dos, tags, Community days and media jobs, and reports
+  destination readiness without writing.
+- `importOldWorkspace` requires an empty destination, creates a timestamped backup, then runs one
+  SQLite transaction. It maps old platform accounts to stable `legacy-<platform>` IDs, metrics to
+  scoped/available metadata, history by account, content by `(account, remote id)`, plan targets
+  to platform-level targets, publication links by content ID, merges by content ID, to-dos with
+  their timestamps, and Community history to snapshots.
+- Media payloads go to `legacy_media_jobs` for the media increment; browser sessions, OAuth tokens
+  and dashboard sessions are never imported.
+- `POST /api/migration/old/preview` and `POST /api/migration/old` expose the same service; the
+  Settings card and `npm run import:old` are the two entry points.
+
 ## Visual evidence
 
 ### UI review follow-up (v0.1.1)
@@ -184,6 +204,10 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 - `after-macos-desktop.png` — actual Electron renderer on macOS with the sidebar moved below the
   traffic lights. `capturePage` omits the native controls; measured in the window: 58 px sidebar
   padding, brand y=58, 46 px drag strip, top bar x=248.
+- `after-import-preview.png` — migration preview from the scrubbed old database: 5 accounts,
+  20 content items, 107 history points, 6 merges, 5 to-dos, 23 Community days and 10 media jobs.
+- `after-import-confirm.png`, `after-import-success.png` — import confirmation and the backup/success state.
+- `after-import-overview.png` — the imported accounts in the workspace.
 
 ### Original increment
 
@@ -201,7 +225,7 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 
 ## Verification performed
 
-- `npm test` — 40 tests, all passing (including the font-scale settings round-trip).
+- `npm test` — 44 tests, all passing (including the font-scale settings round-trip and a synthetic old-database import).
 - `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
 - `npm run build` — all four packages build; Vite production bundle produced.
 - API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.
