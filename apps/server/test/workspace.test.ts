@@ -39,10 +39,17 @@ describe('workspace API', () => {
     const bootstrap = await request(app).get('/api/bootstrap').expect(200);
     expect(bootstrap.body.accounts).toEqual([]);
     expect(bootstrap.body.settings.theme).toBe('system');
-    const updated = await request(app).patch('/api/settings').send({ theme: 'dark' }).expect(200);
+    const updated = await request(app)
+      .patch('/api/settings')
+      .send({ theme: 'dark', fontScale: 1.3 })
+      .expect(200);
     expect(updated.body.theme).toBe('dark');
+    expect(updated.body.fontScale).toBe(1.3);
     const bootstrapAgain = await request(app).get('/api/bootstrap').expect(200);
     expect(bootstrapAgain.body.settings.theme).toBe('dark');
+    expect(bootstrapAgain.body.settings.fontScale).toBe(1.3);
+    const clamped = await request(app).patch('/api/settings').send({ fontScale: 9 }).expect(200);
+    expect(clamped.body.fontScale).toBe(1.4);
   });
 
   it('creates multiple accounts on the same platform with separate ids', async () => {

@@ -210,6 +210,10 @@ ipcMain.handle('creator-center:open-external', (_event, url: unknown) => {
   return true;
 });
 
+if (process.env.CREATOR_CENTER_REMOTE_DEBUG) {
+  app.commandLine.appendSwitch('remote-debugging-port', process.env.CREATOR_CENTER_REMOTE_DEBUG);
+}
+
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();

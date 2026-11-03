@@ -6,6 +6,7 @@ const VALID_KEYS: (keyof AppSettings)[] = [
   'communityEndpoint',
   'communityEnabled',
   'theme',
+  'fontScale',
   'demoMode',
   'accountOrder',
   'mediaInbox',
@@ -30,6 +31,7 @@ export function getSettings(db: DB, dataDir: string): AppSettings {
     communityEndpoint: stringValue(values.get('communityEndpoint'), ''),
     communityEnabled: booleanValue(values.get('communityEnabled'), true),
     theme: values.get('theme') === 'light' || values.get('theme') === 'dark' ? values.get('theme') as 'light' | 'dark' : 'system',
+    fontScale: numberValue(values.get('fontScale'), 1.12, 0.9, 1.4),
     demoMode: booleanValue(values.get('demoMode'), false),
     accountOrder: Array.isArray(values.get('accountOrder'))
       ? (values.get('accountOrder') as unknown[]).filter((item): item is string => typeof item === 'string')
@@ -62,6 +64,11 @@ function stringValue(value: unknown, fallback: string): string {
 
 function booleanValue(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+function numberValue(value: unknown, fallback: number, min: number, max: number): number {
+  const number = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
 }
 
 function nullableString(value: unknown): string | null {

@@ -201,6 +201,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, [dashboard?.sync.running, ready, refreshDashboard]);
 
   const theme = bootstrap?.settings.theme ?? 'system';
+  const fontScale = bootstrap?.settings.fontScale ?? 1.12;
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const apply = () => {
@@ -211,6 +212,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     media.addEventListener('change', apply);
     return () => media.removeEventListener('change', apply);
   }, [theme]);
+
+  useEffect(() => {
+    const scale = Math.min(1.4, Math.max(0.9, fontScale));
+    document.documentElement.style.setProperty('--font-scale', String(scale));
+    document.documentElement.dataset.fontScale = String(scale);
+  }, [fontScale]);
 
   const settings = bootstrap?.settings ?? null;
   const activeAccount = useMemo(() => {

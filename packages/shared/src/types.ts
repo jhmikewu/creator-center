@@ -309,6 +309,8 @@ export interface AppSettings {
   communityEndpoint: string;
   communityEnabled: boolean;
   theme: 'light' | 'dark' | 'system';
+  /** Multiplier applied to every text size, including the settings preview. */
+  fontScale: number;
   demoMode: boolean;
   accountOrder: string[];
   mediaInbox: string | null;

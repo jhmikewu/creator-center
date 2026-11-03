@@ -110,6 +110,7 @@ export function App() {
         Skip to content
       </a>
       <aside className={cn('sidebar', mobileNav && 'is-open')} aria-label="Workspace navigation">
+        <div className="window-drag-strip" aria-hidden="true" />
         <div className="brand">
           <span className="brand-symbol">
             <Atom size={25} strokeWidth={1.6} />

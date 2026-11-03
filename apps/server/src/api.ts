@@ -261,6 +261,9 @@ export function createApp(options: AppOptions): Express {
     if (body.theme === 'light' || body.theme === 'dark' || body.theme === 'system') {
       patch.theme = body.theme;
     }
+    if (typeof body.fontScale === 'number' && Number.isFinite(body.fontScale)) {
+      patch.fontScale = Math.min(1.4, Math.max(0.9, body.fontScale));
+    }
     if (typeof body.demoMode === 'boolean') patch.demoMode = body.demoMode;
     if (typeof body.firstRunCompleted === 'boolean') patch.firstRunCompleted = body.firstRunCompleted;
     for (const key of ['mediaInbox', 'mediaOutput', 'mediaArchive', 'externalWorkerUrl'] as const) {

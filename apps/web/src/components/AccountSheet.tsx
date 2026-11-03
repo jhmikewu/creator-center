@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  ChevronDown,
   ExternalLink,
   Link2,
   Pencil,
@@ -63,9 +64,11 @@ export function AccountSheet({
   const [editing, setEditing] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showAllMetrics, setShowAllMetrics] = useState(false);
   const today = todayShanghai();
 
   useEffect(() => {
+    setShowAllMetrics(false);
     if (!accountId) {
       setDetail(null);
       return;
@@ -98,6 +101,10 @@ export function AccountSheet({
   const scheduled = (detail?.posts ?? [])
     .filter((post) => post.status === 'scheduled')
     .sort((left, right) => (left.scheduledAt ?? '').localeCompare(right.scheduledAt ?? ''));
+  const essentialMetrics: MetricKey[] = ['followers', 'posts', 'likes', 'comments', 'shares'];
+  const visibleMetrics = showAllMetrics
+    ? (Object.keys(METRIC_LABELS) as MetricKey[])
+    : essentialMetrics;
 
   return (
     <>
@@ -219,9 +226,25 @@ export function AccountSheet({
             </section>
 
             <section className="detail-section">
-              <div className="detail-section-head">
-                <h4>Metric detail</h4>
-                <span>Scope, availability, reporting period and source stay visible.</span>
+              <div className="detail-section-head metric-detail-head">
+                <div>
+                  <h4>Metric detail</h4>
+                  <span>
+                    {showAllMetrics
+                      ? 'All 11 metrics · scope, availability, period and source'
+                      : 'Essentials · 5 of 11 metrics'}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn('metric-detail-toggle', showAllMetrics && 'is-open')}
+                  aria-expanded={showAllMetrics}
+                  onClick={() => setShowAllMetrics((value) => !value)}
+                >
+                  {showAllMetrics ? 'Show essentials' : 'Show all metrics'}
+                  <ChevronDown size={14} />
+                </Button>
               </div>
               <div className="metric-table">
                 <div className="metric-table-head">
@@ -231,7 +254,7 @@ export function AccountSheet({
                   <span>Period</span>
                   <span>Source</span>
                 </div>
-                {(Object.keys(METRIC_LABELS) as MetricKey[]).map((key) => {
+                {visibleMetrics.map((key) => {
                   const metric = metricByKey(account, key);
                   return (
                     <div className={cn('metric-row', metric.availability === 'unsupported' && 'is-unsupported')} key={key}>
