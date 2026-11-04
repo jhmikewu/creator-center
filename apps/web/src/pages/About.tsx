@@ -17,6 +17,16 @@ import { Badge, Button, IconButton, TextInput } from '../components/ui';
 
 const CHANGELOG = [
   {
+    version: '0.1.11',
+    date: '4 November 2026',
+    title: 'Local media storage',
+    items: [
+      'The Media workspace stores recordings in a configurable local media root. Each project is a portable folder; files can be added, previewed, downloaded and removed.',
+      'Stored files are served with byte ranges through the local API. The storage driver is isolated so the home unRAID file service can replace the local root later.',
+      'The FFmpeg pipeline, covers and media links remain the next media increment.',
+    ],
+  },
+  {
     version: '0.1.10',
     date: '3 November 2026',
     title: 'Hashtag-free titles and a scrollable graph',
@@ -124,8 +134,8 @@ const CHANGELOG = [
 
 const NEXT = [
   'Embedded signed-in browser sessions for 抖音, 小红书, 公众号 and Bilibili, isolated per account.',
-  'YouTube OAuth is deferred; then the media pipeline and installer.',
-  'Local FFmpeg media pipeline: inbox watching, conversion, chapters, exclusions, two-screen joins and cover sets.',
+  'YouTube OAuth is deferred; then the FFmpeg media pipeline and installer.',
+  'FFmpeg pipeline over stored media: inbox watching, conversion, chapters, exclusions, two-screen joins and cover sets.',
   'Old-workspace SQLite/media migration and backup/restore.',
   'Installer, signing and auto-update path.',
 ];
@@ -154,7 +164,7 @@ export function AboutPage() {
         <div>
           <h1>About &amp; to-dos</h1>
         </div>
-        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.10'}</Badge>
+        <Badge tone="neutral">Version {bootstrap?.version ?? '0.1.11'}</Badge>
       </header>
 
       <div className="about-grid">

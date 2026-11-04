@@ -53,6 +53,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
   const [mediaInbox, setMediaInbox] = useState(settings?.mediaInbox ?? '');
   const [mediaOutput, setMediaOutput] = useState(settings?.mediaOutput ?? '');
   const [mediaArchive, setMediaArchive] = useState(settings?.mediaArchive ?? '');
+  const [mediaRoot, setMediaRoot] = useState(settings?.mediaRoot ?? '');
   const [externalWorkerUrl, setExternalWorkerUrl] = useState(settings?.externalWorkerUrl ?? '');
   const [confirmDemoLoad, setConfirmDemoLoad] = useState(false);
   const [confirmDemoRemove, setConfirmDemoRemove] = useState(false);
@@ -71,6 +72,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
     setMediaInbox(settings.mediaInbox ?? '');
     setMediaOutput(settings.mediaOutput ?? '');
     setMediaArchive(settings.mediaArchive ?? '');
+    setMediaRoot(settings.mediaRoot ?? '');
     setExternalWorkerUrl(settings.externalWorkerUrl ?? '');
   }, [settings]);
 
@@ -436,7 +438,7 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
           <div className="settings-head">
             <span className="settings-icon"><FolderOpen size={17} /></span>
             <div>
-              <h2>Media paths</h2>
+              <h2>Media processing paths</h2>
             </div>
           </div>
           <div className="form-grid form-grid-2">
@@ -467,6 +469,37 @@ export function SettingsPage({ onAddAccount }: { onAddAccount: () => void }) {
               disabled={busy}
             >
               <Check size={15} /> Save media paths
+            </Button>
+          </div>
+        </section>
+
+        <section className="panel settings-card settings-wide">
+          <div className="settings-head">
+            <span className="settings-icon"><HardDrive size={17} /></span>
+            <div>
+              <h2>Local media storage</h2>
+            </div>
+          </div>
+          <div className="form-grid form-grid-2">
+            <Field
+              label="Storage root"
+              hint="Files are copied into project folders here. Clear the field to use the app data folder."
+            >
+              <TextInput
+                value={mediaRoot}
+                onChange={(event) => setMediaRoot(event.target.value)}
+                placeholder={`${settings.dataDir}/media`}
+                spellCheck={false}
+              />
+            </Field>
+          </div>
+          <div className="settings-actions">
+            <Button
+              variant="secondary"
+              onClick={() => void save({ mediaRoot: mediaRoot.trim() || null })}
+              disabled={busy}
+            >
+              <Check size={15} /> Save storage root
             </Button>
           </div>
         </section>

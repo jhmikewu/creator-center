@@ -250,6 +250,21 @@ ipcMain.handle('creator-center:choose-file', async () => {
   return result.canceled ? null : result.filePaths[0] ?? null;
 });
 
+ipcMain.handle('creator-center:choose-media-file', async () => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Choose a media file',
+    properties: ['openFile'],
+    filters: [
+      { name: 'Video', extensions: ['mp4', 'mov', 'm4v', 'webm', 'mkv'] },
+      { name: 'Audio', extensions: ['mp3', 'm4a', 'aac', 'wav', 'flac'] },
+      { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
+      { name: 'Subtitles', extensions: ['srt', 'vtt'] },
+    ],
+  });
+  return result.canceled ? null : result.filePaths[0] ?? null;
+});
+
 ipcMain.handle('creator-center:info', () => ({
   platform: process.platform,
   version: app.getVersion(),

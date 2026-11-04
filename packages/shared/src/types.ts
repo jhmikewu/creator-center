@@ -316,8 +316,50 @@ export interface AppSettings {
   mediaInbox: string | null;
   mediaOutput: string | null;
   mediaArchive: string | null;
+  /** Absolute local root for stored media; null means <dataDir>/media. */
+  mediaRoot: string | null;
   externalWorkerUrl: string | null;
   firstRunCompleted: boolean;
+}
+
+export type MediaStorageKind = 'local';
+
+/** One stored file inside a media project folder. */
+export interface MediaFile {
+  id: string;
+  projectId: string;
+  name: string;
+  /** Path relative to the media storage root, using forward slashes. */
+  relativePath: string;
+  bytes: number;
+  mimeType: string;
+  createdAt: string;
+}
+
+/** A portable folder of original and derived media files. */
+export interface MediaProject {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  files: MediaFile[];
+  bytes: number;
+}
+
+export interface MediaStorageInfo {
+  kind: MediaStorageKind;
+  root: string;
+  freeBytes: number | null;
+  totalBytes: number | null;
+  /** Set when the configured root is missing or not writable. */
+  error: string | null;
+}
+
+export interface MediaLibrary {
+  storage: MediaStorageInfo;
+  projects: MediaProject[];
+  fileCount: number;
+  bytes: number;
 }
 
 export interface Capabilities {

@@ -4,6 +4,20 @@ All browser captures use a **1440 × 940** CSS viewport unless noted. The before
 **light** theme and the same overview/account scenario. The after captures use the opt-in demo
 workspace, so no private Feishu or platform account material is exposed.
 
+## Local media storage (v0.1.11)
+
+| Before (v0.1.10, merged) | After (v0.1.11) |
+| --- | --- |
+| ![Before media workspace](before-media-storage.png) | ![After local media library](after-media-storage.png) |
+| ![Before media settings](before-settings-storage.png) | ![After storage root setting](after-settings-storage.png) |
+
+- `before-media-storage.png` / `after-media-storage.png` — the Media workspace at 1440×940, light,
+  demo workspace; the after state has two stored projects (an MP4 and an SRT chapter file) in the
+  local media root.
+- `before-settings-storage.png` / `after-settings-storage.png` — the same Settings media section,
+  scrolled to the cards: the old Media paths card versus the renamed processing paths and the new
+  local storage root.
+
 ## UI review follow-up (v0.1.1)
 
 | Before (v0.1.0, merged) | After (v0.1.1) |

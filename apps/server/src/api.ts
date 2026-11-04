@@ -1,6 +1,7 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Readable } from 'node:stream';
 import type { AppSettings } from '@creator-center/shared';
 import {
   MergeValidationError,
@@ -34,6 +35,21 @@ import { accountDetail, dashboardFor, parseScope } from './services/dashboard.js
 import { getCommunityState, syncCommunity } from './services/community.js';
 import { seedDemoWorkspace, removeDemoWorkspace } from './demo/seed.js';
 import { MigrationError, importOldWorkspace, previewOldWorkspace } from './services/import-old.js';
+import {
+  addMediaFile,
+  createMediaProject,
+  mediaFileForServing,
+  mediaLibrary,
+  mediaProjectCount,
+  removeMediaFile,
+  removeMediaProject,
+} from './services/media.js';
+import {
+  MediaError,
+  configuredMediaRoot,
+  prepareMediaRoot,
+  resolveMediaRootPath,
+} from './services/media-storage.js';
 import type { SyncService } from './services/sync.js';
 
 export interface AppOptions {
@@ -274,6 +290,21 @@ export function createApp(options: AppOptions): Express {
         patch[key] = value === null ? null : value.trim() || null;
       }
     }
+    if (body.mediaRoot === null || typeof body.mediaRoot === 'string') {
+      const requested = typeof body.mediaRoot === 'string' ? body.mediaRoot.trim() : '';
+      const desiredRoot = resolveMediaRootPath(requested, dataDir);
+      if (
+        desiredRoot !== configuredMediaRoot(dataDir, settings()) &&
+        mediaProjectCount(db) > 0
+      ) {
+        throw new HttpError(
+          409,
+          'Remove the stored media before changing the media storage folder.',
+        );
+      }
+      const nextRoot = prepareMediaRoot(desiredRoot, dataDir);
+      patch.mediaRoot = requested ? nextRoot : null;
+    }
     if (Array.isArray(body.accountOrder)) {
       patch.accountOrder = body.accountOrder.filter((item): item is string => typeof item === 'string');
     }
@@ -288,6 +319,92 @@ export function createApp(options: AppOptions): Express {
   app.post('/api/sync', async (_request, response) => {
     const result = await sync.syncNow('manual');
     response.status(202).json({ ...result, state: sync.state() });
+  });
+
+  app.get('/api/media', (_request, response) => {
+    response.json(mediaLibrary(db, dataDir, settings()));
+  });
+
+  app.post('/api/media/projects', async (request, response, next) => {
+    try {
+      const body = request.body as Record<string, unknown>;
+      const project = await createMediaProject(db, dataDir, settings(), {
+        title: body.title,
+        path: body.path,
+      });
+      response.status(201).json(project);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/media/projects/:id/files', async (request, response, next) => {
+    try {
+      const source = request.body?.path;
+      const file = await addMediaFile(
+        db,
+        dataDir,
+        settings(),
+        request.params.id,
+        typeof source === 'string' ? source : '',
+      );
+      response.status(201).json(file);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete('/api/media/projects/:id', (request, response) => {
+    removeMediaProject(db, dataDir, settings(), request.params.id);
+    response.status(204).end();
+  });
+
+  app.delete('/api/media/files/:id', (request, response) => {
+    removeMediaFile(db, dataDir, settings(), request.params.id);
+    response.status(204).end();
+  });
+
+  app.get('/api/media/files/:id/content', (request, response, next) => {
+    try {
+      const { file, storage, size } = mediaFileForServing(
+        db,
+        dataDir,
+        settings(),
+        request.params.id,
+      );
+      const range = parseByteRange(request.headers.range, size);
+      response.setHeader('Accept-Ranges', 'bytes');
+      response.setHeader('Content-Type', file.mimeType);
+      response.setHeader(
+        'Content-Disposition',
+        `inline; filename*=UTF-8''${encodeURIComponent(file.name).replace(/'/g, '%27')}`,
+      );
+      response.setHeader('Cache-Control', 'private, max-age=0, must-revalidate');
+      if (range === 'invalid') {
+        response.setHeader('Content-Range', `bytes */${size}`);
+        response.status(416).end();
+        return;
+      }
+      if (!range) {
+        response.setHeader('Content-Length', String(size));
+        if (request.method === 'HEAD' || size === 0) {
+          response.end();
+          return;
+        }
+        streamFile(storage.open(file.relativePath), response, next);
+        return;
+      }
+      response.status(206);
+      response.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${size}`);
+      response.setHeader('Content-Length', String(range.end - range.start + 1));
+      if (request.method === 'HEAD') {
+        response.end();
+        return;
+      }
+      streamFile(storage.open(file.relativePath, range), response, next);
+    } catch (error) {
+      next(error);
+    }
   });
 
   app.post('/api/migration/old/preview', (request, response) => {
@@ -350,6 +467,10 @@ export function createApp(options: AppOptions): Express {
       response.status(error.status).json({ error: error.message });
       return;
     }
+    if (error instanceof MediaError) {
+      response.status(error.status).json({ error: error.message });
+      return;
+    }
     console.error(error);
     response.status(500).json({ error: 'Something went wrong on the local server.' });
   });
@@ -387,4 +508,53 @@ function mergeInput(db: DB, body: unknown): Parameters<typeof createMerge>[1] {
   const accounts = listAccounts(db);
   const posts = listPosts(db);
   return validateMergeInput(body, posts, accounts);
+}
+
+function streamFile(stream: Readable, response: Response, next: NextFunction): void {
+  let settled = false;
+  stream.on('error', (error) => {
+    if (settled) return;
+    settled = true;
+    if (!response.headersSent) next(error);
+    else response.destroy(error);
+  });
+  response.on('close', () => {
+    if (settled) return;
+    settled = true;
+    stream.destroy();
+  });
+  stream.pipe(response);
+}
+
+/** One RFC 7233 byte range; undefined means the whole file, 'invalid' means 416. */
+function parseByteRange(
+  header: string | undefined,
+  size: number,
+): { start: number; end: number } | null | 'invalid' {
+  if (!header) return null;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!match) return 'invalid';
+  const [, rawStart = '', rawEnd = ''] = match;
+  if (!rawStart && !rawEnd) return 'invalid';
+  let start: number;
+  let end: number;
+  if (!rawStart) {
+    const suffix = Number(rawEnd);
+    if (!Number.isInteger(suffix) || suffix <= 0) return 'invalid';
+    start = Math.max(0, size - suffix);
+    end = size - 1;
+  } else {
+    start = Number(rawStart);
+    end = rawEnd ? Number(rawEnd) : size - 1;
+  }
+  if (
+    !Number.isInteger(start) ||
+    !Number.isInteger(end) ||
+    start < 0 ||
+    start >= size ||
+    end < start
+  ) {
+    return 'invalid';
+  }
+  return { start, end: Math.min(end, size - 1) };
 }

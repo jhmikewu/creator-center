@@ -177,7 +177,7 @@ describe('old workspace migration', () => {
     const dataDir = tempDir('creator-center-new-');
     const db = openDatabase(dataDir);
     try {
-      expect(schemaVersion(db)).toBe(2);
+      expect(schemaVersion(db)).toBe(3);
       const preview = previewOldWorkspace(db, dataDir, source);
       expect(preview.valid).toBe(true);
       expect(preview.destinationReady).toBe(true);

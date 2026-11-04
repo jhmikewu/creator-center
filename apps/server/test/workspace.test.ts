@@ -335,10 +335,10 @@ describe('workspace API', () => {
   it('reopens a database with schema migrations applied once', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-center-db-'));
     const first = openDatabase(dir);
-    expect(schemaVersion(first)).toBe(2);
+    expect(schemaVersion(first)).toBe(3);
     first.close();
     const second = openDatabase(dir);
-    expect(schemaVersion(second)).toBe(2);
+    expect(schemaVersion(second)).toBe(3);
     expect(() => seedDemoWorkspace(second, getSettings(second, dir))).not.toThrow();
     second.close();
     fs.rmSync(dir, { recursive: true, force: true });
