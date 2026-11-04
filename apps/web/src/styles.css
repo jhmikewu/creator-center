@@ -6139,3 +6139,12 @@ html[data-desktop-platform="darwin"] .window-drag-strip {
     flex-basis: 100%;
   }
 }
+
+.media-links { padding: 0 20px 12px; list-style: none; }
+.media-links li { overflow-wrap: anywhere; margin: 4px 0; }
+.media-links li > span { color: var(--muted); font-size: 12px; margin-right: 8px; }
+.media-link-options { list-style: none; padding: 0; max-height: 360px; overflow-y: auto; }
+.media-link-options label { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; }
+.media-link-options span { min-width: 0; overflow-wrap: anywhere; }
+.media-link-options strong, .media-link-options small { display: block; }
+.media-link-options small { color: var(--muted); }

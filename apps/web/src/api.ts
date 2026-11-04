@@ -6,6 +6,7 @@ import type {
   CommunityState,
   Dashboard,
   MediaFile,
+  MediaLink,
   MediaLibrary,
   MediaProject,
   Merge,
@@ -142,6 +143,11 @@ export const api = {
       method: 'POST',
     }),
   syncState: () => request<SyncState>('/api/sync'),
+  mediaLinkOptions: () => request<MediaLink[]>('/api/media/link-options'),
+  setMediaLink: (projectId: string, link: MediaLink, linked: boolean) =>
+    request<MediaProject>(`/api/media/projects/${encodeURIComponent(projectId)}/links/${link.kind}/${encodeURIComponent(link.id)}`, {
+      method: linked ? 'PUT' : 'DELETE',
+    }),
   media: () => request<MediaLibrary>('/api/media'),
   createMediaProject: (body: { title?: string; path?: string }) =>
     request<MediaProject>('/api/media/projects', {

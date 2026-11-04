@@ -336,6 +336,13 @@ export interface MediaFile {
   createdAt: string;
 }
 
+export interface MediaLink {
+  kind: 'plan' | 'post';
+  id: string;
+  title: string;
+  account: string | null;
+}
+
 /** A portable folder of original and derived media files. */
 export interface MediaProject {
   id: string;
@@ -343,6 +350,7 @@ export interface MediaProject {
   createdAt: string;
   updatedAt: string;
   files: MediaFile[];
+  links: MediaLink[];
   bytes: number;
 }
 

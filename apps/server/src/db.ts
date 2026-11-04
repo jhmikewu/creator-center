@@ -217,6 +217,24 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX media_files_project ON media_files(project_id);
     `,
   },
+  {
+    version: 4,
+    name: 'media project links',
+    sql: `
+      CREATE TABLE media_plan_links (
+        project_id TEXT NOT NULL REFERENCES media_projects(id) ON DELETE CASCADE,
+        target_id TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+        PRIMARY KEY(project_id, target_id)
+      );
+      CREATE TABLE media_post_links (
+        project_id TEXT NOT NULL REFERENCES media_projects(id) ON DELETE CASCADE,
+        target_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+        PRIMARY KEY(project_id, target_id)
+      );
+      CREATE INDEX media_plan_target ON media_plan_links(target_id);
+      CREATE INDEX media_post_target ON media_post_links(target_id);
+    `,
+  },
 ];
 
 export const DEFAULT_SETTINGS: Omit<AppSettings, 'dataDir'> = {
