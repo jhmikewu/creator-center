@@ -1,106 +1,434 @@
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
-  Archive,
-  ArrowRight,
-  Clapperboard,
+  Download,
+  FileAudio,
+  FileText,
   Film,
   FolderOpen,
+  HardDrive,
   Image,
-  MonitorPlay,
-  Scissors,
+  LoaderCircle,
+  Plus,
+  Settings2,
+  Trash2,
 } from 'lucide-react';
+import type { MediaFile, MediaLibrary, MediaProject } from '@creator-center/shared';
+import { formatDateTime } from '@creator-center/shared';
+import { api } from '../api';
 import { useWorkspace } from '../state';
-import { Badge, Button } from '../components/ui';
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  IconButton,
+  Modal,
+  ProgressBar,
+  Spinner,
+  TextInput,
+} from '../components/ui';
+import { formatBytes } from '../utils';
 
-const STEPS = [
-  {
-    icon: FolderOpen,
-    number: '01',
-    title: 'Watched inbox',
-    requirement: 'MED-01',
-  },
-  {
-    icon: Film,
-    number: '02',
-    title: 'Full MP4',
-    requirement: 'MED-02',
-  },
-  {
-    icon: Scissors,
-    number: '03',
-    title: 'Chapters & exclusions',
-    requirement: 'MED-03',
-  },
-  {
-    icon: MonitorPlay,
-    number: '04',
-    title: 'Two-screen join',
-    requirement: 'MED-04',
-  },
-  {
-    icon: Image,
-    number: '05',
-    title: 'Cover sets',
-    requirement: 'COV-01–07',
-  },
-  {
-    icon: Archive,
-    number: '06',
-    title: 'Link & archive',
-    requirement: 'MED-07–12',
-  },
-];
+interface DesktopMediaBridge {
+  chooseMediaFile?: () => Promise<string | null>;
+}
 
 export function MediaPage({ onSettings }: { onSettings: () => void }) {
-  const { settings } = useWorkspace();
-  const paths = [
-    { label: 'Inbox', value: settings?.mediaInbox },
-    { label: 'Outputs', value: settings?.mediaOutput },
-    { label: 'Archive', value: settings?.mediaArchive },
-    { label: 'External worker', value: settings?.externalWorkerUrl },
-  ];
+  const { settings, notify } = useWorkspace();
+  const [library, setLibrary] = useState<MediaLibrary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [dialogProject, setDialogProject] = useState<MediaProject | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [preview, setPreview] = useState<MediaFile | null>(null);
+  const [removal, setRemoval] = useState<
+    { kind: 'file'; file: MediaFile } | { kind: 'project'; project: MediaProject } | null
+  >(null);
+  const [removing, setRemoving] = useState(false);
+
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true);
+    try {
+      const response = await api.media();
+      setLibrary(response);
+      setError('');
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'The media library could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  function openAdd(project: MediaProject | null) {
+    setDialogProject(project);
+    setDialogOpen(true);
+  }
+
+  async function confirmRemoval() {
+    if (!removal) return;
+    setRemoving(true);
+    try {
+      if (removal.kind === 'file') {
+        await api.deleteMediaFile(removal.file.id);
+        notify('File removed from local storage.', 'success');
+      } else {
+        await api.deleteMediaProject(removal.project.id);
+        notify('Media project removed.', 'success');
+      }
+      setRemoval(null);
+      await load(true);
+    } catch (caught) {
+      notify(
+        caught instanceof Error ? caught.message : 'The media could not be removed.',
+        'error',
+      );
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  const storage = library?.storage;
+  const totalBytes = storage?.totalBytes ?? null;
+  const freeBytes = storage?.freeBytes ?? null;
+  const usedBytes =
+    totalBytes !== null && freeBytes !== null ? Math.max(0, totalBytes - freeBytes) : null;
+  const projects = library?.projects ?? [];
+
   return (
     <div className="page media-page">
       <header className="page-heading">
         <div>
           <h1>Media workspace</h1>
         </div>
-        <Badge tone="warning">Next implementation increment</Badge>
-      </header>
-
-      <section className="media-callout">
-        <span className="media-callout-icon"><Clapperboard size={24} /></span>
-        <div>
-          <h2>FFmpeg pipeline</h2>
-          <Button variant="secondary" onClick={onSettings}>
-            Configure media paths
+        <div className="heading-actions">
+          <Button onClick={() => openAdd(null)}>
+            <Plus size={15} /> Add media
           </Button>
         </div>
-      </section>
+      </header>
 
-      <section className="media-locations">
-        {paths.map((entry) => (
-          <div key={entry.label} className="media-location">
-            <span>{entry.label}</span>
-            <code>{entry.value || 'Not configured'}</code>
+      <section className="panel media-storage">
+        <div className="media-storage-main">
+          <span className="media-storage-icon"><HardDrive size={22} /></span>
+          <div className="media-storage-path">
+            <span className="panel-eyebrow">Local storage root</span>
+            <code title={storage?.root ?? settings?.mediaRoot ?? undefined}>
+              {storage?.root ?? settings?.mediaRoot ?? 'Not available'}
+            </code>
           </div>
-        ))}
-      </section>
-
-      <section className="media-pipeline">
-        {STEPS.map((step, index) => (
-          <div className="media-step" key={step.title}>
-            <div className="media-step-top">
-              <span className="media-step-icon"><step.icon size={20} /></span>
-              <span className="media-step-number">{step.number}</span>
-              <ArrowRight size={15} className="media-step-arrow" />
+          <div className="media-storage-stats">
+            <div>
+              <strong>{formatBytes(library?.bytes)}</strong>
+              <span>Stored media</span>
             </div>
-            <h3>{step.title}</h3>
-            <span className="media-requirement">{step.requirement}</span>
-            {index < STEPS.length - 1 && <span className="media-connector" aria-hidden="true" />}
+            <div>
+              <strong>{formatBytes(freeBytes)}</strong>
+              <span>Free on disk</span>
+            </div>
+            <div>
+              <strong>{library?.projects.length ?? 0}</strong>
+              <span>{library?.projects.length === 1 ? 'Project' : 'Projects'}</span>
+            </div>
           </div>
-        ))}
+          <Button variant="secondary" onClick={onSettings}>
+            <Settings2 size={15} /> Storage settings
+          </Button>
+        </div>
+        {usedBytes !== null && totalBytes ? (
+          <div className="media-storage-bar">
+            <ProgressBar value={usedBytes} max={totalBytes} />
+            <span>{formatBytes(usedBytes)} of {formatBytes(totalBytes)} used on this disk</span>
+          </div>
+        ) : null}
+        {storage?.error ? (
+          <p className="media-storage-error" role="alert">{storage.error}</p>
+        ) : (
+          <p className="media-storage-note">
+            Files are copied into project folders here; the original stays where it is.
+          </p>
+        )}
       </section>
 
+      {loading && !library ? (
+        <div className="media-loading"><Spinner label="Loading media" /></div>
+      ) : error ? (
+        <div className="media-load-error" role="alert">
+          <p>{error}</p>
+          <Button variant="secondary" onClick={() => void load()}>Try again</Button>
+        </div>
+      ) : projects.length === 0 ? (
+        <EmptyState
+          icon={<Film size={22} />}
+          title="No media stored locally yet"
+          message="Add a recording to copy it into the workspace's local storage folder."
+          action={<Button onClick={() => openAdd(null)}><Plus size={15} /> Add media</Button>}
+        />
+      ) : (
+        <section className="media-projects">
+          {projects.map((project) => (
+            <article className="panel media-project" key={project.id}>
+              <header className="media-project-head">
+                <span className="media-project-icon"><Film size={18} /></span>
+                <div className="media-project-title">
+                  <h2>{project.title}</h2>
+                  <p>
+                    <span>{project.files.length} {project.files.length === 1 ? 'file' : 'files'}</span>
+                    <span>{formatBytes(project.bytes)}</span>
+                    <span>{formatDateTime(project.createdAt)}</span>
+                  </p>
+                </div>
+                <div className="media-project-actions">
+                  <Button variant="ghost" size="sm" onClick={() => openAdd(project)}>
+                    <Plus size={14} /> Add file
+                  </Button>
+                  <IconButton
+                    label="Remove project"
+                    className="media-remove"
+                    onClick={() => setRemoval({ kind: 'project', project })}
+                  >
+                    <Trash2 size={15} />
+                  </IconButton>
+                </div>
+              </header>
+              {project.files.length === 0 ? (
+                <p className="media-project-empty">This project has no files yet.</p>
+              ) : (
+                <ul className="media-file-list">
+                  {project.files.map((file) => (
+                    <li className="media-file" key={file.id}>
+                      <span className="media-file-icon">{fileIcon(file.mimeType)}</span>
+                      <button
+                        type="button"
+                        className="media-file-name"
+                        onClick={() => setPreview(file)}
+                        aria-label={`Preview ${file.name}`}
+                        title="Preview"
+                      >
+                        <strong>{file.name}</strong>
+                        <small>{formatBytes(file.bytes)} · {file.mimeType}</small>
+                      </button>
+                      <div className="media-file-actions">
+                        <a
+                          className="icon-btn"
+                          href={api.mediaFileUrl(file.id)}
+                          download={file.name}
+                          aria-label={`Download ${file.name}`}
+                          title={`Download ${file.name}`}
+                        >
+                          <Download size={15} />
+                        </a>
+                        <IconButton
+                          label={`Remove ${file.name}`}
+                          className="media-remove"
+                          onClick={() => setRemoval({ kind: 'file', file })}
+                        >
+                          <Trash2 size={15} />
+                        </IconButton>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </section>
+      )}
+
+      <MediaFileDialog
+        open={dialogOpen}
+        project={dialogProject}
+        onClose={() => setDialogOpen(false)}
+        onSaved={async () => {
+          setDialogOpen(false);
+          await load(true);
+        }}
+      />
+      <MediaPreview file={preview} onClose={() => setPreview(null)} />
+      <ConfirmDialog
+        open={Boolean(removal)}
+        title={removal?.kind === 'project' ? 'Remove this media project?' : 'Remove this file?'}
+        message={
+          removal?.kind === 'project'
+            ? `"${removal.project.title}" and every file in its local folder will be deleted.`
+            : removal
+              ? `"${removal.file.name}" will be deleted from local storage.`
+              : ''
+        }
+        confirmLabel={removal?.kind === 'project' ? 'Remove project' : 'Remove file'}
+        destructive
+        busy={removing}
+        onConfirm={() => void confirmRemoval()}
+        onClose={() => setRemoval(null)}
+      />
     </div>
   );
+}
+
+function MediaFileDialog({
+  open,
+  project,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  project: MediaProject | null;
+  onClose: () => void;
+  onSaved: () => Promise<void> | void;
+}) {
+  const { notify } = useWorkspace();
+  const [title, setTitle] = useState('');
+  const [filePath, setFilePath] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const bridge = (window as unknown as { creatorCenter?: DesktopMediaBridge }).creatorCenter;
+
+  useEffect(() => {
+    if (!open) return;
+    setTitle('');
+    setFilePath('');
+    setError('');
+  }, [open, project?.id]);
+
+  async function chooseFile() {
+    if (!bridge?.chooseMediaFile) return;
+    const chosen = await bridge.chooseMediaFile();
+    if (!chosen) return;
+    setFilePath(chosen);
+    if (!title.trim()) setTitle(suggestTitle(chosen));
+    setError('');
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const path = filePath.trim();
+    if (!path) {
+      setError('Choose a file to store.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      if (project) {
+        await api.addMediaFile(project.id, path);
+        notify('File added to local storage.', 'success');
+      } else {
+        await api.createMediaProject({ title: title.trim() || undefined, path });
+        notify('Media stored locally.', 'success');
+      }
+      await onSaved();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'The file could not be stored.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={project ? 'Add a file' : 'Add media'}
+      eyebrow={project ? project.title : 'Local storage'}
+      description={
+        project
+          ? 'The file is copied into this project folder.'
+          : 'Create a project and copy its first file into local storage.'
+      }
+      width="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button type="submit" form="media-file-form" disabled={busy}>
+            {busy ? <LoaderCircle size={16} className="spin" /> : <Plus size={16} />}
+            {project ? 'Add file' : 'Add media'}
+          </Button>
+        </>
+      }
+    >
+      <form id="media-file-form" className="media-dialog-form" onSubmit={(event) => void submit(event)}>
+        {!project && (
+          <Field label="Project title" hint="Leave empty to use the file name.">
+            <TextInput
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Rotational dynamics, lesson 4"
+              autoComplete="off"
+            />
+          </Field>
+        )}
+        <Field label="File" hint="The original file stays where it is.">
+          <div className="media-file-picker">
+            <TextInput
+              value={filePath}
+              onChange={(event) => {
+                setFilePath(event.target.value);
+                setError('');
+              }}
+              placeholder="/Users/you/Movies/lesson.mov"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {bridge?.chooseMediaFile && (
+              <Button variant="secondary" type="button" onClick={() => void chooseFile()}>
+                <FolderOpen size={15} /> Choose…
+              </Button>
+            )}
+          </div>
+        </Field>
+        {error && <p className="settings-error" role="alert">{error}</p>}
+      </form>
+    </Modal>
+  );
+}
+
+function MediaPreview({ file, onClose }: { file: MediaFile | null; onClose: () => void }) {
+  const url = file ? api.mediaFileUrl(file.id) : '';
+  return (
+    <Modal
+      open={Boolean(file)}
+      onClose={onClose}
+      title={file?.name ?? 'Preview'}
+      description={file ? `${formatBytes(file.bytes)} · ${file.mimeType}` : undefined}
+      width="lg"
+      footer={
+        file ? (
+          <>
+            <a className="btn btn-secondary btn-md" href={url} download={file.name}>
+              <Download size={15} /> Download
+            </a>
+            <Button variant="secondary" onClick={onClose}>Close</Button>
+          </>
+        ) : null
+      }
+    >
+      {file ? (
+        file.mimeType.startsWith('video/') ? (
+          <video className="media-preview-video" src={url} controls preload="metadata" />
+        ) : file.mimeType.startsWith('image/') ? (
+          <img className="media-preview-image" src={url} alt={file.name} />
+        ) : file.mimeType.startsWith('audio/') ? (
+          <audio className="media-preview-audio" src={url} controls preload="metadata" />
+        ) : (
+          <p className="media-preview-note">This file has no inline preview. Download it to open it.</p>
+        )
+      ) : null}
+    </Modal>
+  );
+}
+
+function fileIcon(mimeType: string) {
+  if (mimeType.startsWith('video/')) return <Film size={16} />;
+  if (mimeType.startsWith('audio/')) return <FileAudio size={16} />;
+  if (mimeType.startsWith('image/')) return <Image size={16} />;
+  return <FileText size={16} />;
+}
+
+function suggestTitle(filePath: string): string {
+  const name = filePath.split(/[\\/]/).pop() ?? '';
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(0, dot) : name;
 }

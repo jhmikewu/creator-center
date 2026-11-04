@@ -36,6 +36,20 @@ export function percent(value: number, total: number): number {
   return Math.max(0, Math.min(100, (value / total) * 100));
 }
 
+export function formatBytes(bytes: number | null | undefined): string {
+  if (bytes === null || bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '—';
+  if (bytes < 1024) return `${Math.round(bytes)} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const rounded = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+  return `${rounded} ${units[unit]}`;
+}
+
 export function downloadText(filename: string, content: string, type = 'application/json'): void {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);

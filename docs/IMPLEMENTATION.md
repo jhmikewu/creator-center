@@ -119,7 +119,15 @@ read-side present, live integration absent; **Next** = deliberately deferred.
 
 | Requirement | Status | Notes |
 | --- | --- | --- |
-| MED-01..12, COV-01..07 | Next | Media paths/worker endpoint/theme are stored, and the Media page describes the pipeline. No FFmpeg job runs yet. |
+| MED-01..05 | Next | FFmpeg inbox watching, conversion, chapters, two-screen join and the job queue are the next increment. |
+| MED-06 | Partial | Stored media is previewed and downloaded through a range-capable endpoint; derived renders await the pipeline. |
+| MED-07 | Next | Link media files to plans or published posts and archive on link. |
+| MED-08 | Partial | Active projects and files are listed; file and project removal ask for confirmation. Archive/link recovery is next. |
+| MED-09 | Partial | Local storage works without the Unraid worker. FFmpeg local processing and the remote worker/NFS option are next. |
+| MED-10 | Partial | The storage root reports free space, imports check space, and failures are actionable. Processing limits are next. |
+| MED-11 | Partial | One portable folder per project under a configurable root; backup/restore and NFS path mapping are next. |
+| MED-12 | Next | Worker/NFS health and local fallback. |
+| COV-01..07 | Next | The HTML/CSS cover renderer is not implemented yet. |
 
 ### Community (COM)
 
@@ -205,6 +213,27 @@ read-side present, live integration absent; **Next** = deliberately deferred.
   `max_cursor`. A saved-session check returned a ready snapshot with the profile, five
   published posts, analytics and history.
 
+## Media storage
+
+`apps/server/src/services/media-storage.ts` is the storage seam for the media workspace:
+
+- `LocalMediaStorage` writes one portable folder per project under a configurable root (default
+  `<dataDir>/media`) as `projects/<project-id>/<file>`. Video, audio, image and subtitle extensions
+  are accepted; imports copy the source and leave the original in place.
+- The driver exposes `info`, `importFile`, `stat`, `open` and removal methods. A future home
+  file service (the unRAID share) can implement the same contract with HTTP/NFS; project folders
+  and relative paths are the stable contract.
+- Migration 3 adds `media_projects` and `media_files`; SQLite stores titles, sizes, MIME types and
+  root-relative paths, while the bytes stay on disk. Legacy media metadata still sits in
+  `legacy_media_jobs` until the pipeline relinks it.
+- The API is `GET /api/media`, `POST /api/media/projects`,
+  `POST /api/media/projects/:id/files`, `DELETE /api/media/projects/:id`,
+  `DELETE /api/media/files/:id` and `GET /api/media/files/:id/content`. The content endpoint
+  supports single byte ranges and returns 206/416 with the usual headers.
+- The Media page shows the root, free space, projects, files and usage. Settings can change the
+  root before the first project; the API validates and creates the folder, and refuses a change
+  while projects exist. Removing media is confirmed and deletes the file or project folder.
+
 ## Migration
 
 `apps/server/src/services/import-old.ts` owns the import:
@@ -223,6 +252,18 @@ read-side present, live integration absent; **Next** = deliberately deferred.
   Settings card and `npm run import:old` are the two entry points.
 
 ## Visual evidence
+
+### Local media storage (v0.1.11)
+
+| Before — v0.1.10 placeholder | After — v0.1.11 local library |
+| --- | --- |
+| ![Before media workspace](screenshots/before-media-storage.png) | ![After media workspace](screenshots/after-media-storage.png) |
+
+- 1440×940, light theme, demo SQLite workspace. The after capture has two stored projects (a full
+  MP4 and an SRT chapter file) imported into the demo workspace's local media root.
+- `before-settings-storage.png` / `after-settings-storage.png` — the same Settings section scrolled
+  to the media cards: the old media paths card versus the renamed processing paths plus the new
+  local storage root.
 
 ### UI review follow-up (v0.1.1)
 
@@ -258,22 +299,29 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 
 ## Verification performed
 
-- `npm test` — 58 tests, all passing (including the font-scale settings round-trip, the synthetic old-database import, the 抖音 parser and the live bridge adapter).
+- `npm test` — 85 tests, all passing (including media import, duplicate names, settings roots, preview ranges, the synthetic old-database import, the 抖音 parser and the live bridge adapter).
 - `npm run typecheck` — shared, server, web and desktop, with `noUnusedLocals`/`noUnusedParameters`.
 - `npm run build` — all four packages build; Vite production bundle produced.
-- API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove.
+- API smoke: bootstrap, dashboard, plans, sync, Community, settings, demo seed/remove, media project
+  create/import/list, 200/206/416 content responses and confirmed removal.
+- Media UI smoke in the built app: add-media dialog, import through the form, project/file list,
+  video preview (`readyState` 4) and download links; storage settings show the root and save.
 - Live collector smoke: the desktop bridge received the sidecar request, the signed-out 抖音 partition returned `login_required`, and the sync updated the account state.
 - Desktop shell: Electron launched the sidecar on an ephemeral port, `/api/health` returned
   `desktop: true`, and the renderer loaded from the built assets.
-- Visual smoke: overview, account drawer collapsed/expanded metrics, planner, plan dialog, timeline,
-  merge dialog, Community, Settings, About, dark theme and Text size preview at 1440×940; Electron
-  DOM check on macOS confirmed the 58 px sidebar offset and 46 px drag strip.
+- Visual smoke: media workspace and storage settings at 1440×940 light; overview, account drawer
+  collapsed/expanded metrics, planner, plan dialog, timeline, merge dialog, Community, Settings,
+  About, dark theme and Text size preview; Electron DOM check on macOS confirmed the 58 px sidebar
+  offset and 46 px drag strip.
 
 ## Open limitations
 
 - No live platform session, collector or OAuth flow exists yet; real accounts show a truthful
   setup state.
-- No media job, cover render or installer is produced yet.
+- Local media storage and range serving are in; no FFmpeg job, cover render or installer is
+  produced yet. Media links to plans/posts and archive recovery are not implemented.
+- The media content endpoint relies on the local, loopback-only API; per-file access tokens can
+  follow if media is shared beyond this machine.
 - Community parsing understands the old app's status shape and a tolerant simple shape; a real
   endpoint should be verified against the owner's service.
 - The demo workspace is opt-in and clearly marked; it is not auto-seeded.

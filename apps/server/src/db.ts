@@ -194,6 +194,29 @@ const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    version: 3,
+    name: 'local media storage',
+    sql: `
+      CREATE TABLE media_projects (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE media_files (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL REFERENCES media_projects(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        relative_path TEXT NOT NULL UNIQUE,
+        bytes INTEGER NOT NULL,
+        mime_type TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX media_files_project ON media_files(project_id);
+    `,
+  },
 ];
 
 export const DEFAULT_SETTINGS: Omit<AppSettings, 'dataDir'> = {
@@ -206,6 +229,7 @@ export const DEFAULT_SETTINGS: Omit<AppSettings, 'dataDir'> = {
   mediaInbox: null,
   mediaOutput: null,
   mediaArchive: null,
+  mediaRoot: null,
   externalWorkerUrl: null,
   firstRunCompleted: false,
 };

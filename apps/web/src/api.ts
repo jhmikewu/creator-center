@@ -5,6 +5,9 @@ import type {
   MigrationResult,
   CommunityState,
   Dashboard,
+  MediaFile,
+  MediaLibrary,
+  MediaProject,
   Merge,
   Plan,
   Post,
@@ -139,6 +142,22 @@ export const api = {
       method: 'POST',
     }),
   syncState: () => request<SyncState>('/api/sync'),
+  media: () => request<MediaLibrary>('/api/media'),
+  createMediaProject: (body: { title?: string; path?: string }) =>
+    request<MediaProject>('/api/media/projects', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  addMediaFile: (projectId: string, filePath: string) =>
+    request<MediaFile>(`/api/media/projects/${encodeURIComponent(projectId)}/files`, {
+      method: 'POST',
+      body: JSON.stringify({ path: filePath }),
+    }),
+  deleteMediaFile: (id: string) =>
+    request<void>(`/api/media/files/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  deleteMediaProject: (id: string) =>
+    request<void>(`/api/media/projects/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  mediaFileUrl: (id: string) => `/api/media/files/${encodeURIComponent(id)}/content`,
   previewMigration: (sourcePath: string) =>
     request<MigrationPreview>('/api/migration/old/preview', {
       method: 'POST',

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { AppSettings } from '@creator-center/shared';
 import type { DB } from '../db.js';
 
@@ -12,6 +13,7 @@ const VALID_KEYS: (keyof AppSettings)[] = [
   'mediaInbox',
   'mediaOutput',
   'mediaArchive',
+  'mediaRoot',
   'externalWorkerUrl',
   'firstRunCompleted',
 ];
@@ -39,6 +41,7 @@ export function getSettings(db: DB, dataDir: string): AppSettings {
     mediaInbox: nullableString(values.get('mediaInbox')),
     mediaOutput: nullableString(values.get('mediaOutput')),
     mediaArchive: nullableString(values.get('mediaArchive')),
+    mediaRoot: nullableString(values.get('mediaRoot')) ?? path.join(dataDir, 'media'),
     externalWorkerUrl: nullableString(values.get('externalWorkerUrl')),
     firstRunCompleted: booleanValue(values.get('firstRunCompleted'), false),
   };

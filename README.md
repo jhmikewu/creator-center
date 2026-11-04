@@ -7,10 +7,10 @@ Docker, a separate browser host and a watchdog.
 
 > **Status: live collection started.** The desktop shell, local API, SQLite workspace,
 > per-account model, redesigned overview, detailed account view, content planner, posting
-> graph, cross-post merges, Community monitor, About/to-dos and the old-workspace import are
-> implemented. The embedded per-account sessions and all four browser collectors (抖音, Bilibili,
-> 小红书 and 公众号) are in. YouTube OAuth, media processing, cover rendering and
-> installers are the next increments. The boundaries are listed under
+> graph, cross-post merges, Community monitor, About/to-dos, the old-workspace import and
+> local media storage are implemented. The embedded per-account sessions and all four browser
+> collectors (抖音, Bilibili, 小红书 and 公众号) are in. YouTube OAuth, FFmpeg media processing,
+> cover rendering and installers are the next increments. The boundaries are listed under
 > [What remains](#what-remains) and in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
 ## Before and after
@@ -55,6 +55,10 @@ set is in [docs/screenshots](docs/screenshots).
   server bound to `127.0.0.1`, background sync, window-state restoration, single-instance lock,
   English UI, light/dark/system theme, a Text size setting with a live preview, About/to-dos and
   changelog.
+- **Local media storage.** A configurable media root holds one portable folder per media project.
+  Local video, audio, image and subtitle files are copied in, listed, previewed and downloaded
+  through range-capable endpoints, and can be removed with their file. The storage driver is a
+  separate seam so the home unRAID file service can replace the local root later.
 - **Demo workspace.** Six sample accounts (including two on 抖音), thirty days of history,
   realistic plans, posts, three account-keyed merges, scheduled releases and community snapshots.
   It is clearly marked and removable in Settings.
@@ -144,7 +148,7 @@ stale or error truthfully. YouTube is disabled while its OAuth collector is defe
 ## Tests and checks
 
 ```sh
-npm test          # 80 domain/API/database tests
+npm test          # 85 domain/API/database tests
 npm run typecheck # shared, server, web and desktop, with unused-code checks
 npm run build     # shared + server + web + desktop
 ```
@@ -172,9 +176,10 @@ These are deliberate next increments, not hidden gaps:
 
 1. **Live collection.** All four browser collectors are implemented with embedded isolated
    sessions. YouTube is disabled while its OAuth collector is deferred.
-2. **Media pipeline.** Local FFmpeg inbox watching, full-MP4 conversion, chapter/exclusion
-   planning, two-screen alignment/join, clip previews/downloads, archive/link recovery and the
-   optional Unraid worker/NFS endpoint. The settings page already stores its paths.
+2. **Media pipeline.** Local media storage and file serving are in; next are FFmpeg inbox
+   watching, full-MP4 conversion, chapter/exclusion planning, two-screen alignment/join, clip
+   previews, archive/link recovery and the optional Unraid worker/NFS endpoint. The settings page
+   stores the storage root and processing paths.
 3. **Covers.** Deterministic HTML/CSS cover sets in all four ratios with BPhO, Cambridge, AP and
    Edexcel presets, reservation and seven-day cleanup.
 4. **Migration and release.** Import of the old SQLite/media workspace, backup/restore,
