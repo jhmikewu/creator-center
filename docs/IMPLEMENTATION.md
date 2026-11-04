@@ -319,10 +319,27 @@ capture transformed the demo data into the old app's shape; no old-app code was 
 - No live platform session, collector or OAuth flow exists yet; real accounts show a truthful
   setup state.
 - Local media storage and range serving are in; no FFmpeg job, cover render or installer is
-  produced yet. Media links to plans/posts and archive recovery are not implemented.
+  produced yet. Media projects can link to plans/posts; archive recovery is not implemented.
 - The media content endpoint relies on the local, loopback-only API; per-file access tokens can
   follow if media is shared beyond this machine.
 - Community parsing understands the old app's status shape and a tolerant simple shape; a real
   endpoint should be verified against the owner's service.
 - The demo workspace is opt-in and clearly marked; it is not auto-seeded.
 - The old app's data has not been imported; this is a separate migration ticket.
+
+## Media project links (next increment)
+
+- Media project cards show linked plans and posts. The Links picker searches titles and
+  account labels; check or uncheck an item to save immediately.
+- Links apply to the whole project, including files added later. Multiple plans and posts
+  can share a project. Post IDs preserve account isolation even when remote IDs coincide.
+- Schema migration 4 adds foreign-key-backed relations. Removing a target clears its links;
+  unlinking never removes media, and removing a project never removes plans or posts.
+  Collection updates keep post links and display the current title.
+- Local storage remains the only driver. Conversion, cover rendering, archive recovery,
+  file-level links and the unRAID service remain future increments.
+
+Validation for this increment: `npm test` (87 tests), `npm run typecheck`,
+`npm run build`, and `git diff --check` passed. No browser visual smoke was run.
+The SQLite native module was compiled using local Node headers after the proxy blocked
+the prebuilt binary download.

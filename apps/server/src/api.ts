@@ -28,6 +28,7 @@ import {
   tagCatalogue,
   updatePlan,
 } from './repositories/plans.js';
+import { getMediaProject, mediaLinks, touchMediaProject } from './repositories/media.js';
 import { listPosts } from './repositories/posts.js';
 import { createTodo, deleteTodo, listTodos, updateTodo } from './repositories/todos.js';
 import { getSettings, updateSettings } from './repositories/settings.js';
@@ -324,6 +325,32 @@ export function createApp(options: AppOptions): Express {
   app.get('/api/media', (_request, response) => {
     response.json(mediaLibrary(db, dataDir, settings()));
   });
+
+  app.get('/api/media/link-options', (_request, response) => {
+    response.json(mediaLinks(db));
+  });
+
+  for (const method of ['put', 'delete'] as const) {
+    app[method]('/api/media/projects/:id/links/:kind/:targetId', (request, response) => {
+      const { id, kind, targetId } = request.params;
+      if (kind !== 'plan' && kind !== 'post') throw new MediaError(400, 'Choose a plan or post.');
+      if (!getMediaProject(db, id)) throw new MediaError(404, 'That media project no longer exists.');
+      const table = kind === 'plan' ? 'media_plan_links' : 'media_post_links';
+      db.transaction(() => {
+        if (method === 'put') {
+          const targetTable = kind === 'plan' ? 'plans' : 'posts';
+          if (!db.prepare(`SELECT id FROM ${targetTable} WHERE id = ?`).get(targetId)) {
+            throw new MediaError(404, 'That plan or post no longer exists.');
+          }
+          db.prepare(`INSERT OR IGNORE INTO ${table}(project_id, target_id) VALUES (?, ?)`).run(id, targetId);
+        } else {
+          db.prepare(`DELETE FROM ${table} WHERE project_id = ? AND target_id = ?`).run(id, targetId);
+        }
+        touchMediaProject(db, id);
+      })();
+      response.json(getMediaProject(db, id));
+    });
+  }
 
   app.post('/api/media/projects', async (request, response, next) => {
     try {

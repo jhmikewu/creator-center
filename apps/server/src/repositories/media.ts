@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { MediaFile, MediaProject } from '@creator-center/shared';
+import type { MediaFile, MediaProject, MediaLink } from '@creator-center/shared';
 import { isoNow } from '@creator-center/shared';
 import type { DB } from '../db.js';
 
@@ -30,7 +30,7 @@ export interface NewMediaFile {
 
 export function listMediaProjects(db: DB): MediaProject[] {
   const projects = (db.prepare('SELECT * FROM media_projects ORDER BY created_at DESC').all() as MediaProjectRow[]).map(
-    mapProject,
+    (row) => mapProject(db, row),
   );
   const byId = new Map(projects.map((project) => [project.id, project]));
   const files = db
@@ -51,7 +51,7 @@ export function getMediaProject(db: DB, id: string): MediaProject | null {
     | MediaProjectRow
     | undefined;
   if (!row) return null;
-  const project = mapProject(row);
+  const project = mapProject(db, row);
   const files = db
     .prepare('SELECT * FROM media_files WHERE project_id = ? ORDER BY created_at, name')
     .all(id) as MediaFileRow[];
@@ -73,7 +73,7 @@ export function createMediaProjectRow(db: DB, title: string): MediaProject {
   db.prepare(
     'INSERT INTO media_projects(id, title, created_at, updated_at) VALUES (?, ?, ?, ?)',
   ).run(id, title, now, now);
-  return { id, title, createdAt: now, updatedAt: now, files: [], bytes: 0 };
+  return { id, title, createdAt: now, updatedAt: now, files: [], links: [], bytes: 0 };
 }
 
 export function insertMediaFile(db: DB, input: NewMediaFile): MediaFile {
@@ -122,12 +122,13 @@ export function mediaTotals(db: DB): { fileCount: number; bytes: number } {
   return { fileCount: row.count, bytes: row.bytes };
 }
 
-function mapProject(row: MediaProjectRow): MediaProject {
+function mapProject(db: DB, row: MediaProjectRow): MediaProject {
   return {
     id: row.id,
     title: row.title,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    links: mediaLinks(db, row.id),
     files: [],
     bytes: 0,
   };
@@ -143,4 +144,17 @@ function mapFile(row: MediaFileRow): MediaFile {
     mimeType: row.mime_type,
     createdAt: row.created_at,
   };
+}
+
+export function mediaLinks(db: DB, projectId?: string): MediaLink[] {
+  return [
+    ...db.prepare(`SELECT 'plan' AS kind, p.id, p.title, NULL AS account FROM plans p
+      ${projectId === undefined ? '' : 'JOIN media_plan_links l ON l.target_id = p.id WHERE l.project_id = ?'}
+      ORDER BY p.title, p.id`).all(...(projectId === undefined ? [] : [projectId])) as MediaLink[],
+    ...db.prepare(`SELECT 'post' AS kind, p.id, p.title,
+      a.platform || ' · ' || a.display_name AS account FROM posts p
+      JOIN accounts a ON a.id = p.account_id
+      ${projectId === undefined ? '' : 'JOIN media_post_links l ON l.target_id = p.id WHERE l.project_id = ?'}
+      ORDER BY p.title, p.id`).all(...(projectId === undefined ? [] : [projectId])) as MediaLink[],
+  ];
 }

@@ -12,7 +12,7 @@ import {
   Settings2,
   Trash2,
 } from 'lucide-react';
-import type { MediaFile, MediaLibrary, MediaProject } from '@creator-center/shared';
+import type { MediaLink, MediaFile, MediaLibrary, MediaProject } from '@creator-center/shared';
 import { formatDateTime } from '@creator-center/shared';
 import { api } from '../api';
 import { useWorkspace } from '../state';
@@ -40,6 +40,7 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
   const [error, setError] = useState('');
   const [dialogProject, setDialogProject] = useState<MediaProject | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [linkProject, setLinkProject] = useState<MediaProject | null>(null);
   const [preview, setPreview] = useState<MediaFile | null>(null);
   const [removal, setRemoval] = useState<
     { kind: 'file'; file: MediaFile } | { kind: 'project'; project: MediaProject } | null
@@ -182,6 +183,7 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
                   </p>
                 </div>
                 <div className="media-project-actions">
+                  <Button variant="ghost" size="sm" onClick={() => setLinkProject(project)}>Links ({project.links.length})</Button>
                   <Button variant="ghost" size="sm" onClick={() => openAdd(project)}>
                     <Plus size={14} /> Add file
                   </Button>
@@ -194,6 +196,13 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
                   </IconButton>
                 </div>
               </header>
+              {project.links.length > 0 && (
+                <ul className="media-links">
+                  {project.links.map((link) => <li key={link.kind + link.id}>
+                    <span>{link.kind === 'plan' ? 'Plan' : link.account}</span> {link.title || 'Untitled post'}
+                  </li>)}
+                </ul>
+              )}
               {project.files.length === 0 ? (
                 <p className="media-project-empty">This project has no files yet.</p>
               ) : (
@@ -247,6 +256,8 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
           await load(true);
         }}
       />
+      {linkProject && <MediaLinksDialog project={linkProject} onClose={() => setLinkProject(null)}
+        onChanged={async (project) => { setLinkProject(project); await load(true); }} />}
       <MediaPreview file={preview} onClose={() => setPreview(null)} />
       <ConfirmDialog
         open={Boolean(removal)}
@@ -431,4 +442,51 @@ function suggestTitle(filePath: string): string {
   const name = filePath.split(/[\\/]/).pop() ?? '';
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.slice(0, dot) : name;
+}
+
+function MediaLinksDialog({ project, onClose, onChanged }: {
+  project: MediaProject;
+  onClose: () => void;
+  onChanged: (project: MediaProject) => Promise<void>;
+}) {
+  const [options, setOptions] = useState<MediaLink[] | null>(null);
+  const [query, setQuery] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    let active = true;
+    api.mediaLinkOptions().then((items) => { if (active) setOptions(items); })
+      .catch((caught) => { if (active) setError(caught instanceof Error ? caught.message : 'Could not load links.'); });
+    return () => { active = false; };
+  }, []);
+  async function toggle(link: MediaLink, linked: boolean) {
+    setBusy(true);
+    setError('');
+    try {
+      await onChanged(await api.setMediaLink(project.id, link, linked));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not update link.');
+    } finally { setBusy(false); }
+  }
+  const visible = options?.filter((link) =>
+    `${link.title} ${link.account ?? ''} ${link.kind}`.toLowerCase().includes(query.toLowerCase()));
+  return <Modal open onClose={() => { if (!busy) onClose(); }} title="Linked plans and posts"
+    eyebrow={project.title} width="md"
+    footer={<Button variant="secondary" disabled={busy} onClick={onClose}>Done</Button>}>
+    <Field label="Search"><TextInput value={query} onChange={(event) => setQuery(event.target.value)} /></Field>
+    {error && <p role="alert" className="settings-error">{error}</p>}
+    {!options && !error && <Spinner label="Loading plans and posts" />}
+    {visible?.length === 0 && <p>No matching plans or posts.</p>}
+    <ul className="media-link-options">
+      {visible?.map((link) => {
+        const linked = project.links.some((item) => item.kind === link.kind && item.id === link.id);
+        return <li key={link.kind + link.id}><label>
+          <input type="checkbox" checked={linked} disabled={busy}
+            onChange={() => void toggle(link, !linked)} />
+          <span><strong>{link.title || 'Untitled post'}</strong>
+            <small>{link.kind === 'plan' ? 'Plan' : link.account}</small></span>
+        </label></li>;
+      })}
+    </ul>
+  </Modal>;
 }
