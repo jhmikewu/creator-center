@@ -1,3 +1,4 @@
+import { RecordingEditor } from './RecordingEditor';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   Download,
@@ -41,6 +42,7 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
   const [dialogProject, setDialogProject] = useState<MediaProject | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [linkProject, setLinkProject] = useState<MediaProject | null>(null);
+  const [recordingId, setRecordingId] = useState<string | null>(null);
   const [preview, setPreview] = useState<MediaFile | null>(null);
   const [removal, setRemoval] = useState<
     { kind: 'file'; file: MediaFile } | { kind: 'project'; project: MediaProject } | null
@@ -183,6 +185,7 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
                   </p>
                 </div>
                 <div className="media-project-actions">
+                  <Button variant="ghost" size="sm" onClick={() => setRecordingId(project.id)}>Edit recording</Button>
                   <Button variant="ghost" size="sm" onClick={() => setLinkProject(project)}>Links ({project.links.length})</Button>
                   <Button variant="ghost" size="sm" onClick={() => openAdd(project)}>
                     <Plus size={14} /> Add file
@@ -258,6 +261,7 @@ export function MediaPage({ onSettings }: { onSettings: () => void }) {
       />
       {linkProject && <MediaLinksDialog project={linkProject} onClose={() => setLinkProject(null)}
         onChanged={async (project) => { setLinkProject(project); await load(true); }} />}
+      {recordingId && <RecordingEditor id={recordingId} onClose={() => setRecordingId(null)} onChanged={() => void load(true)} />}
       <MediaPreview file={preview} onClose={() => setPreview(null)} />
       <ConfirmDialog
         open={Boolean(removal)}
@@ -293,6 +297,7 @@ function MediaFileDialog({
   const { notify } = useWorkspace();
   const [title, setTitle] = useState('');
   const [filePath, setFilePath] = useState('');
+  const [secondaryPath, setSecondaryPath] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const bridge = (window as unknown as { creatorCenter?: DesktopMediaBridge }).creatorCenter;
@@ -301,6 +306,7 @@ function MediaFileDialog({
     if (!open) return;
     setTitle('');
     setFilePath('');
+    setSecondaryPath('');
     setError('');
   }, [open, project?.id]);
 
@@ -327,8 +333,14 @@ function MediaFileDialog({
         await api.addMediaFile(project.id, path);
         notify('File added to local storage.', 'success');
       } else {
-        await api.createMediaProject({ title: title.trim() || undefined, path });
-        notify('Media stored locally.', 'success');
+        const created = await api.createMediaProject({ title: title.trim() || undefined, path });
+        try {
+          if (secondaryPath.trim()) await api.addMediaFile(created.id, secondaryPath.trim());
+          if (/\.mov$/i.test(path)) await api.processRecording(created.id, 'prepare');
+          notify('Media ready.', 'success');
+        } catch (caught) {
+          notify(`Files preserved. Open Edit recording to retry: ${caught instanceof Error ? caught.message : String(caught)}`, 'error');
+        }
       }
       await onSaved();
     } catch (caught) {
@@ -341,7 +353,7 @@ function MediaFileDialog({
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={() => { if (!busy) onClose(); }}
       title={project ? 'Add a file' : 'Add media'}
       eyebrow={project ? project.title : 'Local storage'}
       description={
@@ -390,6 +402,8 @@ function MediaFileDialog({
             )}
           </div>
         </Field>
+        {!project && <Field label="iPad recording (optional)"><div className="media-file-picker"><TextInput value={secondaryPath} onChange={e => setSecondaryPath(e.target.value)} placeholder="/Users/you/Movies/ipad lesson.MOV" />{bridge?.chooseMediaFile && <Button type="button" variant="secondary" onClick={async () => { const chosen = await bridge.chooseMediaFile!(); if (chosen) setSecondaryPath(chosen); }}>Choose…</Button>}</div></Field>}
+        {busy && <p>Copying and preparing media…</p>}
         {error && <p className="settings-error" role="alert">{error}</p>}
       </form>
     </Modal>

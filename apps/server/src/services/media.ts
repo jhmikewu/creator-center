@@ -1,3 +1,4 @@
+import { assertRecordingIdle, recording } from './recordings.js';
 import path from 'node:path';
 import type { AppSettings, MediaFile, MediaLibrary, MediaProject } from '@creator-center/shared';
 import type { DB } from '../db.js';
@@ -58,6 +59,8 @@ export async function addMediaFile(
   if (!repo.getMediaProject(db, projectId)) {
     throw new MediaError(404, 'That media project no longer exists.');
   }
+  assertRecordingIdle(projectId);
+  if (recording(db, projectId)) throw new MediaError(409, 'Create a new project for another recording.');
   const storage = mediaStorage(dataDir, settings);
   const imported = await storage.importFile(projectId, sourcePath);
   try {
@@ -80,6 +83,8 @@ export function removeMediaFile(
 ): void {
   const file = repo.getMediaFile(db, fileId);
   if (!file) throw new MediaError(404, 'That media file no longer exists.');
+  assertRecordingIdle(file.projectId);
+  if (recording(db, file.projectId)) throw new MediaError(409, 'Recording files are preserved together. Remove the project instead.');
   const storage = mediaStorage(dataDir, settings);
   requireStorage(storage);
   storage.removeFile(file.relativePath);

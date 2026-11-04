@@ -6148,3 +6148,10 @@ html[data-desktop-platform="darwin"] .window-drag-strip {
 .media-link-options span { min-width: 0; overflow-wrap: anywhere; }
 .media-link-options strong, .media-link-options small { display: block; }
 .media-link-options small { color: var(--muted); }
+
+.recording-editor { border: 0; padding: 0; display: grid; gap: 16px; min-width: 0; }
+.recording-sections { display: grid; gap: 8px; }
+.recording-section { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.recording-section label { display: grid; gap: 4px; }
+.recording-section input { width: 110px; }
+.recording-editor input, .recording-editor select { color: inherit; background: var(--bg); border: 1px solid var(--line); padding: 6px; border-radius: 6px; }

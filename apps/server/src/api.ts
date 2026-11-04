@@ -1,3 +1,4 @@
+import { recording, saveRecordingEdit, processRecording, linkRecording, assertRecordingIdle } from './services/recordings.js';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -322,6 +323,24 @@ export function createApp(options: AppOptions): Express {
     response.status(202).json({ ...result, state: sync.state() });
   });
 
+  app.get('/api/media/projects/:id/recording', (request, response) => {
+    response.json(recording(db, request.params.id));
+  });
+  app.put('/api/media/projects/:id/recording', (request, response) => {
+    response.json(saveRecordingEdit(db, request.params.id, request.body ?? {}));
+  });
+  app.post('/api/media/projects/:id/recording/:action', async (request, response, next) => {
+    try {
+      const action = request.params.action;
+      if (action !== 'prepare' && action !== 'render') throw new MediaError(400, 'Unknown recording action.');
+      response.json(await processRecording(db, dataDir, settings(), request.params.id, action, request.body ?? {}));
+    } catch (error) { next(error); }
+  });
+  for (const method of ['put', 'delete'] as const) {
+    app[method]('/api/media/projects/:id/videos/:fileId/posts/:postId', (request, response) => {
+      response.json(linkRecording(db, request.params.id, request.params.fileId, request.params.postId, method === 'put'));
+    });
+  }
   app.get('/api/media', (_request, response) => {
     response.json(mediaLibrary(db, dataDir, settings()));
   });
@@ -382,6 +401,7 @@ export function createApp(options: AppOptions): Express {
   });
 
   app.delete('/api/media/projects/:id', (request, response) => {
+    assertRecordingIdle(request.params.id);
     removeMediaProject(db, dataDir, settings(), request.params.id);
     response.status(204).end();
   });

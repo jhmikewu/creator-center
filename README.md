@@ -209,3 +209,49 @@ legible on a dark surface.
 - [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md) — requirement-by-requirement status,
   architecture and data model.
 - [docs/screenshots](docs/screenshots) — before/after, text-size, macOS spacing and workflow evidence.
+
+### Recording workflow
+
+Install `ffmpeg` and `ffprobe` on the server's PATH (for example, `brew install ffmpeg`
+on macOS). They must include the H.264 (`libx264`) and AAC encoders. The recording
+integration tests also require these executables.
+
+In **Media → Add media**, choose one MOV for a single recording. For coupled
+recordings, also choose the iPad MOV in the optional field before importing. Name
+it `ipad <primary filename>.MOV`; the `ipad` prefix is case insensitive and its
+following whitespace is optional. The remaining filename must match exactly
+(the stored extension is normalized). Import copies the originals, converts both
+sources to MP4, and prepares clap boundaries. Existing stored MOVs can be prepared
+with **Edit recording → Convert & detect claps**. A failed preparation preserves
+the originals and can be retried there after fixing the cause.
+
+The editor previews each converted source and lets you adjust section start/end
+seconds, split sections, drop sections, and assign an output name. Sections with
+the same name are concatenated in timeline order; a different name creates a
+separate video for another post. For pairs, choose MacBook or iPad per section.
+Set the iPad offset so `iPad time = primary time + offset`; every selected range
+must exist in that source. Save edits to resume later, then render videos and
+covers. Each render creates new outputs without replacing earlier versions.
+
+Clap detection is a transient heuristic, not speech/audio classification. Review
+its proposed boundaries: taps and other sharp sounds can be false positives.
+Both sources are analyzed; the primary timeline supplies boundaries, falling back
+to the iPad when the primary has no audio. With no candidates there is one full
+section, which can be split manually. Recordings without audio receive silence
+for compatible concatenation. Renders use 1920×1080, 30fps H.264/AAC, letterboxing
+sources as needed, and a JPEG cover from the first frame.
+
+Each rendered video can link to multiple collected posts. Its first post link
+moves it to the editor's **Archive** view automatically; removing the last link
+(or deleting the collected post) restores it to the active view. Archive is a
+non-destructive local status: no files are moved, deleted, or sent to unRAID.
+Existing project-level plan/post links remain independent and do not archive
+videos. Prepared files are preserved together; remove the project to delete them.
+
+Processing runs in the local server with one operation per project. Keep the
+server running and the dialog open until it finishes. Errors are shown and
+incomplete registered outputs are cleaned up; originals and prior renders remain.
+Jobs are not resumable after a server restart. Temporary processing files use the
+OS temp directory; ensure it and the media root have room for originals, converted
+sources, intermediate clips, and outputs. Each process is limited to six hours;
+clap analysis is limited to 256 MiB of mono 8 kHz PCM (about 4.6 hours).

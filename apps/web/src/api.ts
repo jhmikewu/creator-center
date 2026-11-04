@@ -1,3 +1,4 @@
+import type { RecordingWorkflow, RecordingSection } from '@creator-center/shared';
 import type {
   Account,
   AppSettings,
@@ -143,6 +144,13 @@ export const api = {
       method: 'POST',
     }),
   syncState: () => request<SyncState>('/api/sync'),
+  recording: (id: string) => request<RecordingWorkflow | null>(`/api/media/projects/${id}/recording`),
+  saveRecording: (id: string, sections: RecordingSection[], offset: number) =>
+    request<RecordingWorkflow>(`/api/media/projects/${id}/recording`, { method: 'PUT', body: JSON.stringify({ sections, offset }) }),
+  processRecording: (id: string, action: 'prepare' | 'render', input: { sections?: RecordingSection[]; offset?: number } = {}) =>
+    request<RecordingWorkflow>(`/api/media/projects/${id}/recording/${action}`, { method: 'POST', body: JSON.stringify(input) }),
+  linkVideo: (id: string, fileId: string, postId: string, linked: boolean) =>
+    request<RecordingWorkflow>(`/api/media/projects/${id}/videos/${fileId}/posts/${encodeURIComponent(postId)}`, { method: linked ? 'PUT' : 'DELETE' }),
   mediaLinkOptions: () => request<MediaLink[]>('/api/media/link-options'),
   setMediaLink: (projectId: string, link: MediaLink, linked: boolean) =>
     request<MediaProject>(`/api/media/projects/${encodeURIComponent(projectId)}/links/${link.kind}/${encodeURIComponent(link.id)}`, {

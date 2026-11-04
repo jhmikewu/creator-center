@@ -478,3 +478,12 @@ export interface CollectorResponse {
   detail?: string;
   payload?: DouyinCapture | BrowserCapture;
 }
+
+export interface RecordingSection { start: number; end: number; source: 'primary' | 'secondary' | 'drop'; output: string }
+export interface RecordingWorkflow {
+  primary: string; secondary: string | null;
+  primaryMp4: string; secondaryMp4: string | null;
+  duration: number; secondaryDuration: number | null; offset: number;
+  claps: number[]; secondaryClaps: number[]; sections: RecordingSection[];
+  outputs: { fileId: string; coverId: string; title: string; postIds: string[] }[];
+}
