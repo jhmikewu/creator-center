@@ -235,6 +235,20 @@ const MIGRATIONS: Migration[] = [
       CREATE INDEX media_post_target ON media_post_links(target_id);
     `,
   },
+  {
+    version: 5,
+    name: 'recording workflows',
+    sql: `CREATE TABLE media_workflows (
+      project_id TEXT PRIMARY KEY REFERENCES media_projects(id) ON DELETE CASCADE,
+      state TEXT NOT NULL
+    );
+    CREATE TABLE media_video_posts (
+      file_id TEXT NOT NULL REFERENCES media_files(id) ON DELETE CASCADE,
+      post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      PRIMARY KEY(file_id, post_id)
+    );
+    CREATE INDEX media_video_post_target ON media_video_posts(post_id);`,
+  },
 ];
 
 export const DEFAULT_SETTINGS: Omit<AppSettings, 'dataDir'> = {

@@ -25,6 +25,8 @@
     "import:old": "tsx apps/server/src/services/import-cli.ts"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/better-sqlite3": "^7.6.12",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
@@ -32,11 +34,12 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
     "electron": "^33.2.1",
+    "jsdom": "^26.1.0",
     "tsx": "^4.19.2",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^2.1.8",
-    "cross-env": "^7.0.3"
+    "vitest": "^2.1.8"
   }
 }

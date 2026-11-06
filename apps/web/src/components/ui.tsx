@@ -168,13 +168,15 @@ export function Modal({
   const generated = useId();
   const titleId = labelledBy ?? generated;
   const panel = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onClose();
+        closeRef.current();
       }
       if (event.key !== 'Tab' || !panel.current) return;
       const focusable = panel.current.querySelectorAll<HTMLElement>(
@@ -194,18 +196,19 @@ export function Modal({
     };
     document.addEventListener('keydown', onKey);
     document.body.classList.add('has-modal');
-    window.setTimeout(() => {
+    const focusTimer = window.setTimeout(() => {
       const first = panel.current?.querySelector<HTMLElement>(
         'input, select, textarea, button:not(.modal-close)',
       );
       first?.focus();
     }, 30);
     return () => {
+      window.clearTimeout(focusTimer);
       document.removeEventListener('keydown', onKey);
       document.body.classList.remove('has-modal');
       previous?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   return createPortal(
     <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>

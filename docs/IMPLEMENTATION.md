@@ -343,3 +343,41 @@ Validation for this increment: `npm test` (87 tests), `npm run typecheck`,
 `npm run build`, and `git diff --check` passed. No browser visual smoke was run.
 The SQLite native module was compiled using local Node headers after the proxy blocked
 the prebuilt binary download.
+
+## Recording editing and output archive
+
+Schema migration 5 adds `media_workflows` (saved source IDs, analysis, section
+edits, and rendered output/cover IDs) and `media_video_posts` (file-to-post foreign
+keys). Existing media and project links are retained. Archive membership is
+computed from live video/post links, so collector upserts preserve it and deleted
+posts cannot leave stale archive state. Project deletion cascades both tables.
+
+Recording API under `/api/media/projects/:id`:
+
+- `GET /recording`: prepared workflow, or null.
+- `GET /recording/progress`: current stage and stage percentage, or null when idle; no-store response.
+- `PUT /recording`: validate and save `{sections, offset}` without rendering.
+- `POST /recording/prepare`: prepare stored single or named paired MOVs.
+- `POST /recording/render`: validate `{sections, offset}` and append rendered
+  videos and covers. Sections contain `start`, `end`, `source`
+  (`primary`, `secondary`, `drop`), and an `output` grouping name.
+- `PUT` / `DELETE /videos/:fileId/posts/:postId`: link/unlink a rendered video.
+
+FFmpeg/ffprobe run as argument-array subprocesses without a shell. Generated
+files pass through the existing local storage driver; the processor currently
+requires local source paths. Edits reject non-finite, overlapping, out-of-bounds,
+or unavailable source ranges. Per-project processing locks block conflicting
+renders, saves, links, imports, and deletion. Missing binaries and invalid media
+return actionable errors. Processing is request-scoped, not a durable job queue.
+
+Compatible H.264/yuv420p streams and AAC audio bypass re-encoding on preparation.
+Other video uses the faster `veryfast` H.264 preset. FFmpeg reports processed time
+through a dedicated progress pipe, independently of audio-analysis bytes; the UI
+polls this in-memory stage state every 500 ms. Progress is cleared on success or
+failure and is not persisted across restarts. Copy/save phases are indeterminate.
+
+The recording editor uses small source previews, a scrollable section table, and
+output selectors. Cuts use the primary preview playhead; no midpoint is assumed.
+Modal autofocus runs on opening only, while Escape uses the latest close callback,
+so editing later fields does not reset focus. DOM regression tests cover these
+interactions and progress presentation; they do not substitute for visual smoke.
