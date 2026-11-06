@@ -222,13 +222,17 @@ it `ipad <primary filename>.MOV`; the `ipad` prefix is case insensitive and its
 following whitespace is optional. The remaining filename must match exactly
 (the stored extension is normalized). Import copies the originals, converts both
 sources to MP4, and prepares clap boundaries. Existing stored MOVs can be prepared
-with **Edit recording → Convert & detect claps**. A failed preparation preserves
+with **Edit recording → Convert & detect claps**. Compatible H.264/yuv420p video
+and AAC audio are copied into MP4 without re-encoding; other video uses H.264's
+`veryfast` preset. Non-AAC audio is converted and missing audio receives silence.
+The progress bar reports FFmpeg's processed time for the named stage (conversion,
+clap analysis, or rendering); copying/saving uses an indeterminate bar. A failed preparation preserves
 the originals and can be retried there after fixing the cause.
 
 The editor previews each converted source and lets you adjust section start/end
-seconds, split sections, drop sections, and assign an output name. Sections with
-the same name are concatenated in timeline order; a different name creates a
-separate video for another post. For pairs, choose MacBook or iPad per section.
+seconds, cut at the preview playhead, drop sections, and select an output. Sections with
+the same output are concatenated in timeline order; choose **+ New video** in the
+output selector to make a separate video for another post. For pairs, choose MacBook or iPad per section.
 Set the iPad offset so `iPad time = primary time + offset`; every selected range
 must exist in that source. Save edits to resume later, then render videos and
 covers. Each render creates new outputs without replacing earlier versions.
@@ -237,7 +241,7 @@ Clap detection is a transient heuristic, not speech/audio classification. Review
 its proposed boundaries: taps and other sharp sounds can be false positives.
 Both sources are analyzed; the primary timeline supplies boundaries, falling back
 to the iPad when the primary has no audio. With no candidates there is one full
-section, which can be split manually. Recordings without audio receive silence
+section, which can be cut at any interior playhead position. Recordings without audio receive silence
 for compatible concatenation. Renders use 1920×1080, 30fps H.264/AAC, letterboxing
 sources as needed, and a JPEG cover from the first frame.
 

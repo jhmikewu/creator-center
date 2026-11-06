@@ -487,3 +487,6 @@ export interface RecordingWorkflow {
   claps: number[]; secondaryClaps: number[]; sections: RecordingSection[];
   outputs: { fileId: string; coverId: string; title: string; postIds: string[] }[];
 }
+
+/** Progress is for the named processing stage, not a wall-clock estimate. */
+export interface RecordingProgress { stage: string; percent: number | null }

@@ -1,4 +1,4 @@
-import { recording, saveRecordingEdit, processRecording, linkRecording, assertRecordingIdle } from './services/recordings.js';
+import { recording, recordingProgress, saveRecordingEdit, processRecording, linkRecording, assertRecordingIdle } from './services/recordings.js';
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -323,6 +323,9 @@ export function createApp(options: AppOptions): Express {
     response.status(202).json({ ...result, state: sync.state() });
   });
 
+  app.get('/api/media/projects/:id/recording/progress', (request, response) => {
+    response.set('Cache-Control', 'no-store').json(recordingProgress(db, request.params.id));
+  });
   app.get('/api/media/projects/:id/recording', (request, response) => {
     response.json(recording(db, request.params.id));
   });

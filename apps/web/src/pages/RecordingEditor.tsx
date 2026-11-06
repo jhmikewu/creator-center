@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { RecordingProgress } from '../components/RecordingProgress';
+import { useEffect, useRef, useState } from 'react';
 import type { MediaLink, RecordingWorkflow } from '@creator-center/shared';
 import { api } from '../api';
 import { Button, Modal, Spinner } from '../components/ui';
@@ -19,6 +20,8 @@ export function RecordingEditor({
   const [posts, setPosts] = useState<MediaLink[]>([]);
   const [archive, setArchive] = useState(false);
   const [query, setQuery] = useState('');
+  const primaryVideo = useRef<HTMLVideoElement>(null);
+  const [playhead, setPlayhead] = useState(0);
   useEffect(() => {
     Promise.all([api.recording(id), api.mediaLinkOptions()])
       .then(([s, p]) => {
@@ -64,9 +67,8 @@ export function RecordingEditor({
           {error}
         </p>
       )}
-      {(busy || loading) && (
-        <Spinner label={busy ? 'Processing recording… Keep this window open.' : 'Loading'} />
-      )}
+      {loading && <Spinner label="Loading" />}
+      {busy && <RecordingProgress projectId={id} fallback="Saving changes" />}
       {!loading && !state && (
         <>
           <p>
@@ -82,147 +84,207 @@ export function RecordingEditor({
       )}
       {state && (
         <fieldset disabled={busy} className="recording-editor">
-          <legend>{state.secondary ? 'MacBook + iPad' : 'Single recording'}</legend>
-          <video
-            controls
-            src={api.mediaFileUrl(state.primaryMp4)}
-            className="media-preview-video"
-          />
-          {state.secondaryMp4 && (
-            <>
+          <legend className="sr-only">
+            {state.secondary ? 'MacBook + iPad' : 'Single recording'}
+          </legend>
+          <div className="recording-previews">
+            <figure>
               <video
+                ref={primaryVideo}
                 controls
-                src={api.mediaFileUrl(state.secondaryMp4)}
-                className="media-preview-video"
+                preload="metadata"
+                src={api.mediaFileUrl(state.primaryMp4)}
+                onTimeUpdate={(e) => setPlayhead(e.currentTarget.currentTime)}
               />
-              <label>
-                iPad offset (seconds){' '}
+              {state.secondaryMp4 && <figcaption>MacBook</figcaption>}
+            </figure>
+            {state.secondaryMp4 && (
+              <figure>
+                <video controls preload="metadata" src={api.mediaFileUrl(state.secondaryMp4)} />
+                <figcaption>iPad</figcaption>
+              </figure>
+            )}
+          </div>
+          <div className="recording-toolbar">
+            <Button
+              variant="secondary"
+              disabled={
+                !state.sections.some((s) => playhead > s.start + 0.01 && playhead < s.end - 0.01)
+              }
+              onClick={() => {
+                const time = primaryVideo.current?.currentTime ?? playhead;
+                setState({
+                  ...state,
+                  sections: state.sections.flatMap((s) =>
+                    time > s.start + 0.01 && time < s.end - 0.01
+                      ? [
+                          { ...s, end: time },
+                          { ...s, start: time },
+                        ]
+                      : [s],
+                  ),
+                });
+              }}
+            >
+              Cut at playhead ({playhead.toFixed(2)}s)
+            </Button>
+            {state.secondaryMp4 && (
+              <label title="iPad time = MacBook time + offset">
+                iPad offset (s)
                 <input
+                  aria-label="iPad offset (seconds)"
                   type="number"
                   step="0.01"
                   value={state.offset}
                   onChange={(e) => setState({ ...state, offset: Number(e.target.value) })}
                 />
               </label>
-              <small>
-                iPad time = primary time + offset. iPad clap candidates:{' '}
-                {state.secondaryClaps.map((t) => t.toFixed(2)).join(', ') || 'none'}.
-              </small>
-            </>
-          )}
-          <p>{state.claps.length} clap candidates · Review boundaries before rendering.</p>
-          <div className="recording-sections">
-            {state.sections.map((section, i) => (
-              <div className="recording-section" key={i}>
-                <span>{i + 1}</span>
-                <label>
-                  Start{' '}
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={section.start}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        sections: state.sections.map((s, n) =>
-                          n === i ? { ...s, start: Number(e.target.value) } : s,
-                        ),
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  End{' '}
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={section.end}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        sections: state.sections.map((s, n) =>
-                          n === i ? { ...s, end: Number(e.target.value) } : s,
-                        ),
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  Source{' '}
-                  <select
-                    value={section.source}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        sections: state.sections.map((s, n) =>
-                          n === i ? { ...s, source: e.target.value as typeof s.source } : s,
-                        ),
-                      })
-                    }
-                  >
-                    <option value="primary">{state.secondary ? 'MacBook' : 'Recording'}</option>
-                    {state.secondary && <option value="secondary">iPad</option>}
-                    <option value="drop">Drop</option>
-                  </select>
-                </label>
-                <label>
-                  Output{' '}
-                  <input
-                    value={section.output}
-                    onChange={(e) =>
-                      setState({
-                        ...state,
-                        sections: state.sections.map((s, n) =>
-                          n === i ? { ...s, output: e.target.value } : s,
-                        ),
-                      })
-                    }
-                  />
-                </label>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    const midpoint = (section.start + section.end) / 2;
-                    setState({
-                      ...state,
-                      sections: state.sections.flatMap((s, n) =>
-                        n === i
-                          ? [
-                              { ...s, end: midpoint },
-                              { ...s, start: midpoint },
-                            ]
-                          : [s],
-                      ),
-                    });
-                  }}
-                >
-                  Split
-                </Button>
-              </div>
-            ))}
+            )}
           </div>
-          <p>
-            Sections with the same output name become one video. Use another name for a separate
-            post.
-          </p>
-          <Button
-            variant="secondary"
-            onClick={() => void perform(() => api.saveRecording(id, state.sections, state.offset))}
-          >
-            Save edits
-          </Button>
-          <Button
-            onClick={() =>
-              void perform(() =>
-                api.processRecording(id, 'render', {
-                  sections: state.sections,
-                  offset: state.offset,
-                }),
-              )
-            }
-          >
-            Render videos & covers
-          </Button>
+          <div className="recording-table-scroll">
+            <table className="recording-sections">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Start (s)</th>
+                  <th>End (s)</th>
+                  <th>Source</th>
+                  <th>Output</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.sections.map((section, i) => (
+                  <tr key={i}>
+                    <td>
+                      <button
+                        type="button"
+                        className="recording-seek"
+                        aria-label={`Preview section ${i + 1}`}
+                        onClick={() => {
+                          if (primaryVideo.current)
+                            primaryVideo.current.currentTime = section.start;
+                          setPlayhead(section.start);
+                        }}
+                      >
+                        {i + 1}
+                      </button>
+                    </td>
+                    <td>
+                      <input
+                        aria-label={`Section ${i + 1} start`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={section.start}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            sections: state.sections.map((s, n) =>
+                              n === i ? { ...s, start: Number(e.target.value) } : s,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        aria-label={`Section ${i + 1} end`}
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={section.end}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            sections: state.sections.map((s, n) =>
+                              n === i ? { ...s, end: Number(e.target.value) } : s,
+                            ),
+                          })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <select
+                        aria-label={`Section ${i + 1} source`}
+                        value={section.source}
+                        onChange={(e) =>
+                          setState({
+                            ...state,
+                            sections: state.sections.map((s, n) =>
+                              n === i ? { ...s, source: e.target.value as typeof s.source } : s,
+                            ),
+                          })
+                        }
+                      >
+                        <option value="primary">{state.secondary ? 'MacBook' : 'Recording'}</option>
+                        {state.secondary && <option value="secondary">iPad</option>}
+                        <option value="drop">Drop</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        aria-label={`Section ${i + 1} output`}
+                        disabled={section.source === 'drop'}
+                        value={section.output}
+                        onChange={(e) => {
+                          let output = e.target.value;
+                          if (output === '__new_video__') {
+                            let number = 1;
+                            const names = [
+                              ...state.sections.map((s) => s.output),
+                              ...state.outputs.map((o) => o.title),
+                            ];
+                            while (names.includes(`Video ${number}`)) number++;
+                            output = `Video ${number}`;
+                          }
+                          setState({
+                            ...state,
+                            sections: state.sections.map((s, n) =>
+                              n === i ? { ...s, output } : s,
+                            ),
+                          });
+                        }}
+                      >
+                        {[
+                          ...new Set([
+                            ...state.sections.map((s) => s.output),
+                            ...state.outputs.map((o) => o.title),
+                          ]),
+                        ].map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                        <option value="__new_video__">+ New video</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="recording-toolbar">
+            <Button
+              variant="secondary"
+              onClick={() =>
+                void perform(() => api.saveRecording(id, state.sections, state.offset))
+              }
+            >
+              Save edits
+            </Button>
+            <Button
+              onClick={() =>
+                void perform(() =>
+                  api.processRecording(id, 'render', {
+                    sections: state.sections,
+                    offset: state.offset,
+                  }),
+                )
+              }
+            >
+              Render videos & covers
+            </Button>
+          </div>
           <label>
             <input
               type="checkbox"
@@ -242,7 +304,7 @@ export function RecordingEditor({
                 <h3>{output.title}</h3>
                 <video
                   controls
-                  className="media-preview-video"
+                  className="recording-output-preview"
                   src={api.mediaFileUrl(output.fileId)}
                 />
                 <a href={api.mediaFileUrl(output.fileId)} download>

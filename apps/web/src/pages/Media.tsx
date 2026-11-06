@@ -1,3 +1,4 @@
+import { RecordingProgress } from '../components/RecordingProgress';
 import { RecordingEditor } from './RecordingEditor';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
@@ -298,6 +299,7 @@ function MediaFileDialog({
   const [title, setTitle] = useState('');
   const [filePath, setFilePath] = useState('');
   const [secondaryPath, setSecondaryPath] = useState('');
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const bridge = (window as unknown as { creatorCenter?: DesktopMediaBridge }).creatorCenter;
@@ -307,6 +309,7 @@ function MediaFileDialog({
     setTitle('');
     setFilePath('');
     setSecondaryPath('');
+    setProcessingId(null);
     setError('');
   }, [open, project?.id]);
 
@@ -336,7 +339,10 @@ function MediaFileDialog({
         const created = await api.createMediaProject({ title: title.trim() || undefined, path });
         try {
           if (secondaryPath.trim()) await api.addMediaFile(created.id, secondaryPath.trim());
-          if (/\.mov$/i.test(path)) await api.processRecording(created.id, 'prepare');
+          if (/\.mov$/i.test(path)) {
+            setProcessingId(created.id);
+            await api.processRecording(created.id, 'prepare');
+          }
           notify('Media ready.', 'success');
         } catch (caught) {
           notify(`Files preserved. Open Edit recording to retry: ${caught instanceof Error ? caught.message : String(caught)}`, 'error');
@@ -403,7 +409,7 @@ function MediaFileDialog({
           </div>
         </Field>
         {!project && <Field label="iPad recording (optional)"><div className="media-file-picker"><TextInput value={secondaryPath} onChange={e => setSecondaryPath(e.target.value)} placeholder="/Users/you/Movies/ipad lesson.MOV" />{bridge?.chooseMediaFile && <Button type="button" variant="secondary" onClick={async () => { const chosen = await bridge.chooseMediaFile!(); if (chosen) setSecondaryPath(chosen); }}>Choose…</Button>}</div></Field>}
-        {busy && <p>Copying and preparing media…</p>}
+        {busy && <RecordingProgress projectId={processingId} fallback={processingId ? 'Preparing recording' : 'Copying media'} />}
         {error && <p className="settings-error" role="alert">{error}</p>}
       </form>
     </Modal>

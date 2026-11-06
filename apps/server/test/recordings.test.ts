@@ -7,6 +7,9 @@ import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import {
   pairRecordings,
+  recordingProgress,
+  canCopyVideo,
+  progressSeconds,
   detectClaps,
   validateSections,
   processRecording,
@@ -20,6 +23,15 @@ import { createMediaProject, addMediaFile, removeMediaFile } from '../src/servic
 import type { RecordingWorkflow } from '@creator-center/shared';
 
 describe('recording decisions', () => {
+  it('copies only browser-compatible H.264 and parses ffmpeg time progress', () => {
+    expect(canCopyVideo({ codec_name: 'h264', pix_fmt: 'yuv420p' })).toBe(true);
+    expect(canCopyVideo({ codec_name: 'hevc', pix_fmt: 'yuv420p' })).toBe(false);
+    expect(canCopyVideo({ codec_name: 'h264', pix_fmt: 'yuv444p' })).toBe(false);
+    expect(progressSeconds('out_time_us=12000000')).toBe(12);
+    expect(progressSeconds('out_time_ms=12000000')).toBe(12);
+    expect(progressSeconds('out_time_us=-100')).toBe(0);
+    expect(progressSeconds('progress=end')).toBeNull();
+  });
   it('matches iPad prefix case and whitespace but requires the exact primary name', () => {
     for (const prefix of ['ipad ', 'iPad', 'IPAD   '])
       expect(pairRecordings(['Lesson.mov', `${prefix}Lesson.mov`])).toEqual({
@@ -70,11 +82,35 @@ it('converts actual paired MOVs, renders source choices and covers, and preserve
       path: path.join(dir, 'lesson.mov'),
     });
     await addMediaFile(db, dir, settings, project.id, path.join(dir, 'IPADlesson.mov'));
+    expect(recordingProgress(db, project.id)).toBeNull();
     const preparing = processRecording(db, dir, settings, project.id, 'prepare', {});
     await expect(processRecording(db, dir, settings, project.id, 'prepare', {})).rejects.toThrow(
       'processing',
     );
+    expect(recordingProgress(db, project.id)?.stage).toBeTruthy();
     const prepared = (await preparing)!;
+    expect(recordingProgress(db, project.id)).toBeNull();
+    const mp4 = db
+      .prepare('SELECT relative_path FROM media_files WHERE id = ?')
+      .get(prepared.primaryMp4) as { relative_path: string };
+    const packets = (file: string) =>
+      execFileSync('ffprobe', [
+        '-v',
+        'error',
+        '-select_streams',
+        'v:0',
+        '-show_packets',
+        '-show_entries',
+        'packet=data_hash',
+        '-show_data_hash',
+        'sha256',
+        '-of',
+        'csv=p=0',
+        file,
+      ]).toString();
+    expect(packets(path.join(dir, 'media', mp4.relative_path))).toBe(
+      packets(path.join(dir, 'lesson.mov')),
+    );
     expect(prepared.secondaryMp4).toBeTruthy();
     expect(prepared.claps).toEqual([]);
     const rendered = (await processRecording(db, dir, settings, project.id, 'render', {
@@ -199,6 +235,7 @@ it('prepares a single MOV with audio and cleans up failed conversions for retry'
       db.prepare('SELECT id FROM media_files WHERE project_id = ?').all(partial.id),
     ).toHaveLength(2);
     expect(recording(db, partial.id)).toBeNull();
+    expect(recordingProgress(db, partial.id)).toBeNull();
     fs.writeFileSync(path.join(dir, 'broken.mov'), 'not a video');
     const broken = await createMediaProject(db, dir, settings, {
       path: path.join(dir, 'broken.mov'),
@@ -211,6 +248,47 @@ it('prepares a single MOV with audio and cleans up failed conversions for retry'
     expect(
       db.prepare('SELECT id FROM media_files WHERE project_id = ?').all(broken.id),
     ).toHaveLength(1);
+  } finally {
+    db.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}, 120000);
+
+it('transcodes incompatible MOV video to H.264 instead of copying it', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'recording-transcode-'));
+  const db = openDatabase(dir);
+  try {
+    const source = path.join(dir, 'legacy.mov');
+    execFileSync('ffmpeg', [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'color=c=green:s=160x120:r=30:d=1',
+      '-c:v',
+      'mpeg4',
+      source,
+    ]);
+    const settings = getSettings(db, dir);
+    const project = await createMediaProject(db, dir, settings, { path: source });
+    const state = (await processRecording(db, dir, settings, project.id, 'prepare', {}))!;
+    const row = db
+      .prepare('SELECT relative_path FROM media_files WHERE id = ?')
+      .get(state.primaryMp4) as { relative_path: string };
+    const info = JSON.parse(
+      execFileSync('ffprobe', [
+        '-v',
+        'error',
+        '-show_streams',
+        '-of',
+        'json',
+        path.join(dir, 'media', row.relative_path),
+      ]).toString(),
+    );
+    expect(info.streams[0].codec_name).toBe('h264');
+    expect(info.streams[0].pix_fmt).toBe('yuv420p');
+    expect(recordingProgress(db, project.id)).toBeNull();
   } finally {
     db.close();
     fs.rmSync(dir, { recursive: true, force: true });

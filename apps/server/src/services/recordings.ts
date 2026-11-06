@@ -2,13 +2,31 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import type { AppSettings, RecordingWorkflow, RecordingSection } from '@creator-center/shared';
+import type {
+  AppSettings,
+  RecordingWorkflow,
+  RecordingSection,
+  RecordingProgress,
+} from '@creator-center/shared';
 import type { DB } from '../db.js';
 import * as repo from '../repositories/media.js';
 import { mediaStorage } from './media.js';
 import { MediaError } from './media-storage.js';
 
 const busy = new Set<string>();
+const progress = new Map<string, RecordingProgress>();
+export function recordingProgress(db: DB, id: string): RecordingProgress | null {
+  if (!repo.getMediaProject(db, id)) throw new MediaError(404, 'Project not found.');
+  return progress.get(id) ?? null;
+}
+/** ffmpeg reports microseconds even for the legacy out_time_ms key. */
+export function progressSeconds(line: string): number | null {
+  const match = /^out_time_(?:us|ms)=(-?\d+)$/.exec(line);
+  return match ? Math.max(0, Number(match[1]) / 1_000_000) : null;
+}
+export function canCopyVideo(stream: { codec_name?: string; pix_fmt?: string }): boolean {
+  return stream.codec_name === 'h264' && stream.pix_fmt === 'yuv420p';
+}
 export function assertRecordingIdle(id: string) {
   if (busy.has(id)) throw new MediaError(409, 'This recording is processing.');
 }
@@ -42,19 +60,33 @@ export function pairRecordings(names: string[]): { primary: string; secondary: s
   }
   throw new MediaError(400, 'Use one MOV, or a MOV plus “ipad <same name>.MOV”.');
 }
-async function run(command: string, args: string[]): Promise<Buffer> {
+async function run(
+  command: string,
+  args: string[],
+  onProgress?: (seconds: number) => void,
+): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe', 'pipe'] });
+    let pending = '';
+    child.stdio[3]?.on('data', (data: Buffer) => {
+      pending += data.toString();
+      const lines = pending.split('\n');
+      pending = lines.pop() ?? '';
+      for (const line of lines) {
+        const seconds = progressSeconds(line.trim());
+        if (seconds !== null) onProgress?.(seconds);
+      }
+    });
     const chunks: Buffer[] = [];
     let bytes = 0;
     let error = '';
     const timer = setTimeout(() => child.kill('SIGKILL'), 6 * 60 * 60 * 1000);
-    child.stdout.on('data', (data: Buffer) => {
+    child.stdout!.on('data', (data: Buffer) => {
       bytes += data.length;
       if (bytes > 256 * 1024 * 1024) child.kill();
       else chunks.push(data);
     });
-    child.stderr.on('data', (data) => {
+    child.stderr!.on('data', (data) => {
       error = (error + String(data)).slice(-4000);
     });
     child.on('error', () => {
@@ -69,8 +101,12 @@ async function run(command: string, args: string[]): Promise<Buffer> {
     });
   });
 }
-const ffmpeg = (args: string[]) =>
-  run('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', '-y', ...args]);
+const ffmpeg = (args: string[], onProgress?: (seconds: number) => void) =>
+  run(
+    'ffmpeg',
+    ['-hide_banner', '-loglevel', 'error', '-nostdin', '-y', '-progress', 'pipe:3', ...args],
+    onProgress,
+  );
 async function probe(file: string) {
   const data = JSON.parse(
     (
@@ -86,6 +122,12 @@ async function probe(file: string) {
     throw new MediaError(400, 'Recording has no valid video duration.');
   return {
     duration,
+    copyVideo: canCopyVideo(
+      data.streams.find((s: { codec_type: string }) => s.codec_type === 'video'),
+    ),
+    copyAudio:
+      data.streams.find((s: { codec_type: string }) => s.codec_type === 'audio')?.codec_name ===
+      'aac',
     audio: data.streams.some((s: { codec_type: string }) => s.codec_type === 'audio'),
   };
 }
@@ -177,6 +219,18 @@ export async function processRecording(
   assertRecordingIdle(id);
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'creator-recording-'));
   busy.add(id);
+  progress.set(id, { stage: 'Reading recording', percent: null });
+  const trackedFfmpeg = async (stage: string, duration: number, args: string[]) => {
+    progress.set(id, { stage, percent: 0 });
+    await ffmpeg(args, (seconds) => {
+      const previous = progress.get(id)?.percent ?? 0;
+      progress.set(id, {
+        stage,
+        percent: Math.max(previous, Math.min(99, Math.round((seconds / duration) * 100))),
+      });
+    });
+    progress.set(id, { stage, percent: 100 });
+  };
   const storage = mediaStorage(dataDir, settings);
   const added: string[] = [];
   const source = (fileId: string) => {
@@ -186,6 +240,7 @@ export async function processRecording(
     return path.join(storage.root, f.relativePath);
   };
   const store = async (file: string) => {
+    progress.set(id, { stage: 'Saving file', percent: null });
     const imported = await storage.importFile(id, file);
     try {
       const result = repo.insertMediaFile(db, { projectId: id, ...imported });
@@ -208,59 +263,60 @@ export async function processRecording(
         const file = source(fileId);
         const info = await probe(file);
         const dest = path.join(temp, `${name}.mp4`);
-        await ffmpeg([
-          '-i',
-          file,
-          ...(!info.audio ? ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo'] : []),
-          '-map',
-          '0:v:0',
-          '-map',
-          info.audio ? '0:a:0' : '1:a:0',
-          '-t',
-          String(info.duration),
-          '-vf',
-          'scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1',
-          '-c:v',
-          'libx264',
-          '-preset',
-          'fast',
-          '-crf',
-          '20',
-          '-pix_fmt',
-          'yuv420p',
-          '-c:a',
-          'aac',
-          '-ar',
-          '48000',
-          '-ac',
-          '2',
-          '-movflags',
-          '+faststart',
-          dest,
-        ]);
+        await trackedFfmpeg(
+          `${info.copyVideo ? 'Repackaging' : 'Converting'} ${name === 'ipad' ? 'iPad' : 'primary'} to MP4`,
+          info.duration,
+          [
+            '-i',
+            file,
+            ...(!info.audio ? ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo'] : []),
+            '-map',
+            '0:v:0',
+            '-map',
+            info.audio ? '0:a:0' : '1:a:0',
+            '-t',
+            String(info.duration),
+            ...(info.copyVideo
+              ? ['-c:v', 'copy']
+              : [
+                  '-vf',
+                  'scale=trunc(iw/2)*2:trunc(ih/2)*2,setsar=1',
+                  '-c:v',
+                  'libx264',
+                  '-preset',
+                  'veryfast',
+                  '-crf',
+                  '20',
+                  '-pix_fmt',
+                  'yuv420p',
+                ]),
+            ...(info.copyAudio ? ['-c:a', 'copy'] : ['-c:a', 'aac', '-ar', '48000', '-ac', '2']),
+            '-movflags',
+            '+faststart',
+            dest,
+          ],
+        );
         return { id: await store(dest), ...info, dest };
       };
       const p = await convert(primary.id, 'primary');
       const s = secondary ? await convert(secondary.id, 'ipad') : null;
-      const clapTimes = async (video: typeof p) =>
-        video.audio
+      const clapTimes = async (video: typeof p, label: string) => {
+        progress.set(id, { stage: `Detecting claps · ${label}`, percent: video.audio ? 0 : null });
+        return video.audio
           ? detectClaps(
-              await ffmpeg([
-                '-i',
-                video.dest,
-                '-vn',
-                '-ac',
-                '1',
-                '-ar',
-                '8000',
-                '-f',
-                's16le',
-                'pipe:1',
-              ]),
+              await ffmpeg(
+                ['-i', video.dest, '-vn', '-ac', '1', '-ar', '8000', '-f', 's16le', 'pipe:1'],
+                (seconds) =>
+                  progress.set(id, {
+                    stage: `Detecting claps · ${label}`,
+                    percent: Math.min(99, Math.round((seconds / video.duration) * 100)),
+                  }),
+              ),
             ).filter((t) => t > 0.1 && t < video.duration - 0.1)
           : [];
-      const primaryClaps = await clapTimes(p);
-      const secondaryClaps = s ? await clapTimes(s) : [];
+      };
+      const primaryClaps = await clapTimes(p, 'primary');
+      const secondaryClaps = s ? await clapTimes(s, 'iPad') : [];
       const claps = (p.audio ? primaryClaps : secondaryClaps).filter((t) => t < p.duration - 0.1);
       const bounds = [0, ...claps, p.duration];
       state = {
@@ -296,52 +352,63 @@ export async function processRecording(
           (s) => s.source !== 'drop' && s.output.trim() === title,
         )) {
           const clip = path.join(temp, `clip-${index}-${clips.length}.mkv`);
-          await ffmpeg([
-            '-ss',
-            String(section.start + (section.source === 'secondary' ? offset : 0)),
-            '-i',
-            source(section.source === 'secondary' ? state.secondaryMp4! : state.primaryMp4),
-            '-t',
-            String(section.end - section.start),
-            '-vf',
-            'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
-            '-c:v',
-            'libx264',
-            '-preset',
-            'fast',
-            '-crf',
-            '20',
-            '-pix_fmt',
-            'yuv420p',
-            '-c:a',
-            'pcm_s16le',
-            '-ar',
-            '48000',
-            '-ac',
-            '2',
-            clip,
-          ]);
+          await trackedFfmpeg(
+            `Rendering ${title} · section ${clips.length + 1}`,
+            section.end - section.start,
+            [
+              '-ss',
+              String(section.start + (section.source === 'secondary' ? offset : 0)),
+              '-i',
+              source(section.source === 'secondary' ? state.secondaryMp4! : state.primaryMp4),
+              '-t',
+              String(section.end - section.start),
+              '-vf',
+              'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30',
+              '-c:v',
+              'libx264',
+              '-preset',
+              'fast',
+              '-crf',
+              '20',
+              '-pix_fmt',
+              'yuv420p',
+              '-c:a',
+              'pcm_s16le',
+              '-ar',
+              '48000',
+              '-ac',
+              '2',
+              clip,
+            ],
+          );
           clips.push(clip);
         }
         const list = path.join(temp, `list-${index}.txt`);
         fs.writeFileSync(list, clips.map((c) => `file '${path.basename(c)}'`).join('\n'));
         const video = path.join(temp, `video-${index + 1}.mp4`);
         const cover = path.join(temp, `cover-${index + 1}.jpg`);
-        await ffmpeg([
-          '-f',
-          'concat',
-          '-safe',
-          '0',
-          '-i',
-          list,
-          '-c:v',
-          'copy',
-          '-c:a',
-          'aac',
-          '-movflags',
-          '+faststart',
-          video,
-        ]);
+        await trackedFfmpeg(
+          `Joining ${title}`,
+          sections
+            .filter((s) => s.source !== 'drop' && s.output.trim() === title)
+            .reduce((total, s) => total + s.end - s.start, 0),
+          [
+            '-f',
+            'concat',
+            '-safe',
+            '0',
+            '-i',
+            list,
+            '-c:v',
+            'copy',
+            '-c:a',
+            'aac',
+            '-movflags',
+            '+faststart',
+            video,
+          ],
+        );
+        progress.set(id, { stage: `Cover · ${title}`, percent: null });
         await ffmpeg(['-i', video, '-frames:v', '1', '-q:v', '2', cover]);
         state.outputs.push({
           fileId: await store(video),
@@ -365,6 +432,7 @@ export async function processRecording(
     }
     throw error;
   } finally {
+    progress.delete(id);
     busy.delete(id);
     fs.rmSync(temp, { recursive: true, force: true });
   }

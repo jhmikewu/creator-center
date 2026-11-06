@@ -1,4 +1,4 @@
-import type { RecordingWorkflow, RecordingSection } from '@creator-center/shared';
+import type { RecordingWorkflow, RecordingSection, RecordingProgress } from '@creator-center/shared';
 import type {
   Account,
   AppSettings,
@@ -144,6 +144,7 @@ export const api = {
       method: 'POST',
     }),
   syncState: () => request<SyncState>('/api/sync'),
+  recordingProgress: (id: string) => request<RecordingProgress | null>(`/api/media/projects/${id}/recording/progress`),
   recording: (id: string) => request<RecordingWorkflow | null>(`/api/media/projects/${id}/recording`),
   saveRecording: (id: string, sections: RecordingSection[], offset: number) =>
     request<RecordingWorkflow>(`/api/media/projects/${id}/recording`, { method: 'PUT', body: JSON.stringify({ sections, offset }) }),
